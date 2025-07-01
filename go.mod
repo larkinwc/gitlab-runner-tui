@@ -1,4 +1,4 @@
-module github.com/larkin/gitlab-runner-tui
+module github.com/larkinwc/gitlab-runner-tui
 
 go 1.24.3
 

@@ -26,19 +26,19 @@ A Terminal User Interface (TUI) for managing GitLab runners on Debian hosts. Thi
 
 ```bash
 # Download and install latest release
-curl -sSL https://raw.githubusercontent.com/larkin/gitlab-runner-tui/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/larkinwc/gitlab-runner-tui/main/install.sh | bash
 
 # Or with wget
-wget -qO- https://raw.githubusercontent.com/larkin/gitlab-runner-tui/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/larkinwc/gitlab-runner-tui/main/install.sh | bash
 ```
 
 ### Manual Download
 
-Download the latest release for your platform from the [releases page](https://github.com/larkin/gitlab-runner-tui/releases).
+Download the latest release for your platform from the [releases page](https://github.com/larkinwc/gitlab-runner-tui/releases).
 
 ```bash
 # Example for Linux x64
-curl -L https://github.com/larkin/gitlab-runner-tui/releases/latest/download/gitlab-runner-tui_Linux_x86_64.tar.gz | tar xz
+curl -L https://github.com/larkinwc/gitlab-runner-tui/releases/latest/download/gitlab-runner-tui_Linux_x86_64.tar.gz | tar xz
 sudo mv gitlab-runner-tui /usr/local/bin/
 ```
 
@@ -46,7 +46,7 @@ sudo mv gitlab-runner-tui /usr/local/bin/
 
 ```bash
 # Clone the repository
-git clone https://github.com/larkin/gitlab-runner-tui
+git clone https://github.com/larkinwc/gitlab-runner-tui
 cd gitlab-runner-tui
 
 # Build the binary

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/larkin/gitlab-runner-tui/pkg/runner"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/runner"
 	"gopkg.in/yaml.v3"
 )
 
@@ -68,11 +68,11 @@ func (cm *ConfigManager) UpdateConcurrency(concurrent int) error {
 	if cm.config == nil {
 		return fmt.Errorf("no config loaded")
 	}
-	
+
 	if concurrent < 1 {
 		return fmt.Errorf("concurrent must be at least 1")
 	}
-	
+
 	cm.config.Concurrent = concurrent
 	return nil
 }
@@ -81,11 +81,11 @@ func (cm *ConfigManager) UpdateCheckInterval(interval int) error {
 	if cm.config == nil {
 		return fmt.Errorf("no config loaded")
 	}
-	
+
 	if interval < 0 {
 		return fmt.Errorf("check_interval must be non-negative")
 	}
-	
+
 	cm.config.CheckInterval = interval
 	return nil
 }
@@ -94,7 +94,7 @@ func (cm *ConfigManager) UpdateLogLevel(level string) error {
 	if cm.config == nil {
 		return fmt.Errorf("no config loaded")
 	}
-	
+
 	validLevels := map[string]bool{
 		"debug": true,
 		"info":  true,
@@ -103,11 +103,11 @@ func (cm *ConfigManager) UpdateLogLevel(level string) error {
 		"fatal": true,
 		"panic": true,
 	}
-	
+
 	if !validLevels[level] {
 		return fmt.Errorf("invalid log level: %s", level)
 	}
-	
+
 	cm.config.LogLevel = level
 	return nil
 }
@@ -116,13 +116,13 @@ func (cm *ConfigManager) GetRunner(name string) (*runner.RunnerConfig, int) {
 	if cm.config == nil {
 		return nil, -1
 	}
-	
+
 	for i, r := range cm.config.Runners {
 		if r.Name == name {
 			return &cm.config.Runners[i], i
 		}
 	}
-	
+
 	return nil, -1
 }
 
@@ -131,11 +131,11 @@ func (cm *ConfigManager) UpdateRunnerLimit(name string, limit int) error {
 	if runner == nil {
 		return fmt.Errorf("runner %s not found", name)
 	}
-	
+
 	if limit < 0 {
 		return fmt.Errorf("limit must be non-negative")
 	}
-	
+
 	cm.config.Runners[idx].Limit = limit
 	return nil
 }
@@ -145,7 +145,7 @@ func (cm *ConfigManager) UpdateRunnerTags(name string, tags []string) error {
 	if runner == nil {
 		return fmt.Errorf("runner %s not found", name)
 	}
-	
+
 	cm.config.Runners[idx].TagList = tags
 	return nil
 }
@@ -155,7 +155,7 @@ func (cm *ConfigManager) UpdateRunnerUntagged(name string, runUntagged bool) err
 	if runner == nil {
 		return fmt.Errorf("runner %s not found", name)
 	}
-	
+
 	cm.config.Runners[idx].RunUntagged = runUntagged
 	return nil
 }
@@ -165,7 +165,7 @@ func (cm *ConfigManager) UpdateRunnerLocked(name string, locked bool) error {
 	if runner == nil {
 		return fmt.Errorf("runner %s not found", name)
 	}
-	
+
 	cm.config.Runners[idx].Locked = locked
 	return nil
 }
@@ -175,11 +175,11 @@ func (cm *ConfigManager) UpdateRunnerMaxBuilds(name string, maxBuilds int) error
 	if runner == nil {
 		return fmt.Errorf("runner %s not found", name)
 	}
-	
+
 	if maxBuilds < 0 {
 		return fmt.Errorf("max_builds must be non-negative")
 	}
-	
+
 	cm.config.Runners[idx].MaxBuilds = maxBuilds
 	return nil
 }
@@ -188,11 +188,11 @@ func (cm *ConfigManager) Validate() error {
 	if cm.config == nil {
 		return fmt.Errorf("no config loaded")
 	}
-	
+
 	if cm.config.Concurrent < 1 {
 		return fmt.Errorf("concurrent must be at least 1")
 	}
-	
+
 	for i, runner := range cm.config.Runners {
 		if runner.Name == "" {
 			return fmt.Errorf("runner %d has no name", i)
@@ -206,7 +206,7 @@ func (cm *ConfigManager) Validate() error {
 		if runner.Executor == "" {
 			return fmt.Errorf("runner %s has no executor", runner.Name)
 		}
-		
+
 		switch runner.Executor {
 		case "docker", "docker+machine", "docker-ssh", "docker-ssh+machine":
 			if runner.Docker == nil || runner.Docker.Image == "" {
@@ -218,6 +218,6 @@ func (cm *ConfigManager) Validate() error {
 			}
 		}
 	}
-	
+
 	return nil
 }

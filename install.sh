@@ -3,7 +3,7 @@ set -e
 
 # GitLab Runner TUI Installer Script
 
-REPO="larkin/gitlab-runner-tui"
+REPO="larkinwc/gitlab-runner-tui"
 INSTALL_DIR="/usr/local/bin"
 BINARY_NAME="gitlab-runner-tui"
 

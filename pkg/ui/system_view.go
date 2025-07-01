@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/larkin/gitlab-runner-tui/pkg/runner"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/runner"
 )
 
 type SystemView struct {

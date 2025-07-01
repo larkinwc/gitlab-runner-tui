@@ -8,25 +8,25 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/larkin/gitlab-runner-tui/pkg/runner"
-	"github.com/larkin/gitlab-runner-tui/pkg/ui"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/runner"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/ui"
 )
 
 type model struct {
-	tabs         []string
-	activeTab    int
-	runnersView  *ui.RunnersView
-	logsView     *ui.LogsView
-	configView   *ui.ConfigView
-	systemView   *ui.SystemView
-	width        int
-	height       int
-	quitting     bool
+	tabs        []string
+	activeTab   int
+	runnersView *ui.RunnersView
+	logsView    *ui.LogsView
+	configView  *ui.ConfigView
+	systemView  *ui.SystemView
+	width       int
+	height      int
+	quitting    bool
 }
 
 func initialModel(configPath string) model {
 	service := runner.NewService(configPath)
-	
+
 	return model{
 		tabs:        []string{"Runners", "Logs", "Config", "System"},
 		activeTab:   0,
@@ -53,12 +53,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		
+
 		m.runnersView.Update(msg)
 		m.logsView.Update(msg)
 		m.configView.Update(msg)
 		m.systemView.Update(msg)
-		
+
 		return m, nil
 
 	case tea.KeyMsg:
@@ -70,21 +70,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.quitting = true
 			return m, tea.Quit
-			
+
 		case "tab":
 			m.activeTab = (m.activeTab + 1) % len(m.tabs)
 			return m, nil
-			
+
 		case "shift+tab":
 			m.activeTab = (m.activeTab - 1 + len(m.tabs)) % len(m.tabs)
 			return m, nil
-			
+
 		case "1", "2", "3", "4":
 			if idx := int(msg.String()[0] - '1'); idx < len(m.tabs) {
 				m.activeTab = idx
 			}
 			return m, nil
-			
+
 		case "enter":
 			if m.activeTab == 0 {
 				if runner := m.runnersView.GetSelectedRunner(); runner != nil {
@@ -123,7 +123,7 @@ func (m model) View() string {
 	}
 
 	tabBar := m.renderTabBar()
-	
+
 	var content string
 	switch m.activeTab {
 	case 0:
@@ -135,7 +135,7 @@ func (m model) View() string {
 	case 3:
 		content = m.systemView.View()
 	}
-	
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		tabBar,
@@ -145,7 +145,7 @@ func (m model) View() string {
 
 func (m model) renderTabBar() string {
 	var tabs []string
-	
+
 	for i, tab := range m.tabs {
 		style := ui.TabStyle
 		if i == m.activeTab {
@@ -153,7 +153,7 @@ func (m model) renderTabBar() string {
 		}
 		tabs = append(tabs, style.Render(fmt.Sprintf("%d. %s", i+1, tab)))
 	}
-	
+
 	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
 }
 
@@ -174,7 +174,7 @@ func main() {
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)
-	
+
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}

@@ -8,21 +8,21 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/larkin/gitlab-runner-tui/pkg/config"
-	"github.com/larkin/gitlab-runner-tui/pkg/runner"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/config"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/runner"
 )
 
 type ConfigView struct {
-	configMgr    *config.TOMLConfigManager
-	config       *runner.Config
-	inputs       []textinput.Model
-	focusIndex   int
-	err          error
-	successMsg   string
-	width        int
-	height       int
+	configMgr      *config.TOMLConfigManager
+	config         *runner.Config
+	inputs         []textinput.Model
+	focusIndex     int
+	err            error
+	successMsg     string
+	width          int
+	height         int
 	selectedRunner int
-	editingRunner bool
+	editingRunner  bool
 }
 
 const (
@@ -37,7 +37,7 @@ const (
 
 func NewConfigView(configPath string) *ConfigView {
 	configMgr := config.NewTOMLConfigManager(configPath)
-	
+
 	inputs := make([]textinput.Model, inputCount)
 	for i := range inputs {
 		t := textinput.New()
@@ -47,19 +47,19 @@ func NewConfigView(configPath string) *ConfigView {
 
 	inputs[inputConcurrent].Placeholder = "Concurrent jobs"
 	inputs[inputConcurrent].Prompt = "Concurrent: "
-	
+
 	inputs[inputCheckInterval].Placeholder = "Check interval (seconds)"
 	inputs[inputCheckInterval].Prompt = "Check Interval: "
-	
+
 	inputs[inputLogLevel].Placeholder = "Log level (debug/info/warn/error)"
 	inputs[inputLogLevel].Prompt = "Log Level: "
-	
+
 	inputs[inputRunnerLimit].Placeholder = "Runner job limit"
 	inputs[inputRunnerLimit].Prompt = "Job Limit: "
-	
+
 	inputs[inputRunnerMaxBuilds].Placeholder = "Max concurrent builds"
 	inputs[inputRunnerMaxBuilds].Prompt = "Max Builds: "
-	
+
 	inputs[inputRunnerTags].Placeholder = "Comma-separated tags"
 	inputs[inputRunnerTags].Prompt = "Tags: "
 
@@ -111,18 +111,18 @@ func (v *ConfigView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else {
 				v.focusIndex--
 			}
-			
+
 			inputsCount := 3
 			if v.editingRunner {
 				inputsCount = 6
 			}
-			
+
 			if v.focusIndex < 0 {
 				v.focusIndex = inputsCount - 1
 			} else if v.focusIndex >= inputsCount {
 				v.focusIndex = 0
 			}
-			
+
 			for i := range v.inputs {
 				if i == v.focusIndex {
 					v.inputs[i].Focus()
@@ -191,7 +191,7 @@ func (v *ConfigView) View() string {
 	if !v.editingRunner {
 		content = append(content, TitleStyle.Render("Global Settings"))
 		content = append(content, "")
-		
+
 		for i := 0; i < 3; i++ {
 			style := InputStyle
 			if i == v.focusIndex {
@@ -199,7 +199,7 @@ func (v *ConfigView) View() string {
 			}
 			content = append(content, style.Render(v.inputs[i].View()))
 		}
-		
+
 		content = append(content, "")
 		content = append(content, InfoBoxStyle.Render(fmt.Sprintf("Total Runners: %d", len(v.config.Runners))))
 	} else {
@@ -211,7 +211,7 @@ func (v *ConfigView) View() string {
 			content = append(content, "")
 			content = append(content, fmt.Sprintf("Executor: %s", runner.Executor))
 			content = append(content, "")
-			
+
 			for i := 3; i < 6; i++ {
 				style := InputStyle
 				if i == v.focusIndex {
@@ -238,7 +238,7 @@ func (v *ConfigView) View() string {
 		help = append(help, "'↑/↓' select runner", "'esc' back")
 	}
 	help = append(help, "'q' quit")
-	
+
 	content = append(content, "", HelpStyle.Render(strings.Join(help, " • ")))
 
 	return lipgloss.JoinVertical(lipgloss.Left, content...)
@@ -252,7 +252,7 @@ func (v *ConfigView) updateInputs() {
 	v.inputs[inputConcurrent].SetValue(strconv.Itoa(v.config.Concurrent))
 	v.inputs[inputCheckInterval].SetValue(strconv.Itoa(v.config.CheckInterval))
 	v.inputs[inputLogLevel].SetValue(v.config.LogLevel)
-	
+
 	v.inputs[inputConcurrent].Focus()
 	for i := 1; i < len(v.inputs); i++ {
 		v.inputs[i].Blur()
@@ -268,7 +268,7 @@ func (v *ConfigView) updateRunnerInputs() {
 	v.inputs[inputRunnerLimit].SetValue(strconv.Itoa(runner.Limit))
 	v.inputs[inputRunnerMaxBuilds].SetValue(strconv.Itoa(runner.MaxBuilds))
 	v.inputs[inputRunnerTags].SetValue(strings.Join(runner.TagList, ","))
-	
+
 	v.inputs[inputRunnerLimit].Focus()
 	for i := 0; i < len(v.inputs); i++ {
 		if i != inputRunnerLimit {
@@ -303,15 +303,15 @@ func (v *ConfigView) saveConfig() tea.Msg {
 
 	if v.editingRunner && len(v.config.Runners) > 0 {
 		runner := v.config.Runners[v.selectedRunner]
-		
+
 		if limit, err := strconv.Atoi(v.inputs[inputRunnerLimit].Value()); err == nil {
 			v.configMgr.UpdateRunnerLimit(runner.Name, limit)
 		}
-		
+
 		if maxBuilds, err := strconv.Atoi(v.inputs[inputRunnerMaxBuilds].Value()); err == nil {
 			v.configMgr.UpdateRunnerMaxBuilds(runner.Name, maxBuilds)
 		}
-		
+
 		if tags := v.inputs[inputRunnerTags].Value(); tags != "" {
 			tagList := strings.Split(tags, ",")
 			for i := range tagList {

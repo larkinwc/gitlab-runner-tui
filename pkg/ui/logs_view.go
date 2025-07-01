@@ -8,21 +8,21 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/larkin/gitlab-runner-tui/pkg/runner"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/runner"
 )
 
 type LogsView struct {
-	viewport    viewport.Model
-	service     runner.Service
-	runnerName  string
-	logs        []string
-	loading     bool
-	spinner     spinner.Model
-	err         error
-	width       int
-	height      int
-	autoScroll  bool
-	filterText  string
+	viewport   viewport.Model
+	service    runner.Service
+	runnerName string
+	logs       []string
+	loading    bool
+	spinner    spinner.Model
+	err        error
+	width      int
+	height     int
+	autoScroll bool
+	filterText string
 }
 
 func NewLogsView(service runner.Service) *LogsView {
@@ -125,7 +125,7 @@ func (v *LogsView) View() string {
 		if v.autoScroll {
 			statusBar += " | Auto-scroll: ON"
 		}
-		content = append(content, 
+		content = append(content,
 			v.viewport.View(),
 			"",
 			lipgloss.NewStyle().Foreground(ColorMuted).Render(statusBar),
@@ -152,7 +152,7 @@ func (v *LogsView) SetRunner(name string) {
 func (v *LogsView) updateViewport() {
 	content := strings.Join(v.logs, "\n")
 	v.viewport.SetContent(content)
-	
+
 	if v.autoScroll {
 		v.viewport.GotoBottom()
 	}
