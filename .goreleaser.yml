@@ -49,8 +49,5 @@ changelog:
       - '^test:'
 
 release:
-  github:
-    owner: larkin
-    name: gitlab-runner-tui
   draft: false
   prerelease: auto
