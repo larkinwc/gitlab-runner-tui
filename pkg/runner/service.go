@@ -6,6 +6,7 @@ import (
 	"io"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,6 +18,8 @@ type Service interface {
 	StreamRunnerLogs(name string) (io.ReadCloser, error)
 	RestartRunner() error
 	GetSystemStatus() (*SystemStatus, error)
+	GetJobHistory(limit int) ([]Job, error)
+	SetDebugMode(enabled bool)
 }
 
 type SystemStatus struct {
@@ -30,6 +33,7 @@ type SystemStatus struct {
 
 type gitlabRunnerService struct {
 	configPath string
+	debugMode  bool
 }
 
 func NewService(configPath string) Service {
@@ -126,7 +130,12 @@ func (s *gitlabRunnerService) GetRunnerStatus(name string) (*Runner, error) {
 }
 
 func (s *gitlabRunnerService) GetRunnerLogs(name string, lines int) ([]string, error) {
-	cmd := exec.Command("journalctl", "-u", "gitlab-runner", "-n", fmt.Sprintf("%d", lines), "--no-pager")
+	args := []string{"-u", "gitlab-runner", "-n", fmt.Sprintf("%d", lines), "--no-pager"}
+	if s.debugMode {
+		args = append(args, "-o", "verbose")
+	}
+	
+	cmd := exec.Command("journalctl", args...)
 	output, err := cmd.Output()
 	if err != nil {
 		cmd = exec.Command("tail", "-n", fmt.Sprintf("%d", lines), "/var/log/gitlab-runner.log")
@@ -241,4 +250,130 @@ func extractTimestamp(output string) string {
 		return strings.TrimSpace(parts[1])
 	}
 	return ""
+}
+
+func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
+	var jobs []Job
+	
+	// Try to get job history from journalctl logs
+	cmd := exec.Command("journalctl", "-u", "gitlab-runner", "-n", fmt.Sprintf("%d", limit*10), "--no-pager", "-r")
+	output, err := cmd.Output()
+	if err != nil {
+		// Fallback to log file
+		cmd = exec.Command("tail", "-n", fmt.Sprintf("%d", limit*10), "/var/log/gitlab-runner.log")
+		output, err = cmd.Output()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get job history: %w", err)
+		}
+	}
+
+	lines := strings.Split(string(output), "\n")
+	jobMap := make(map[int]*Job)
+	
+	for _, line := range lines {
+		job := s.parseJobFromLog(line)
+		if job != nil {
+			if existing, ok := jobMap[job.ID]; ok {
+				// Update existing job with new info
+				if job.Status != "" {
+					existing.Status = job.Status
+				}
+				if !job.Started.IsZero() {
+					existing.Started = job.Started
+				}
+				if !job.Finished.IsZero() {
+					existing.Finished = job.Finished
+					existing.Duration = job.Finished.Sub(existing.Started)
+				}
+				if job.RunnerName != "" {
+					existing.RunnerName = job.RunnerName
+				}
+				if job.ExitCode != 0 {
+					existing.ExitCode = job.ExitCode
+				}
+			} else {
+				jobMap[job.ID] = job
+			}
+		}
+		
+		if len(jobMap) >= limit {
+			break
+		}
+	}
+	
+	// Convert map to slice
+	for _, job := range jobMap {
+		jobs = append(jobs, *job)
+	}
+	
+	// Sort by started time (newest first)
+	for i := 0; i < len(jobs)-1; i++ {
+		for j := i + 1; j < len(jobs); j++ {
+			if jobs[i].Started.Before(jobs[j].Started) {
+				jobs[i], jobs[j] = jobs[j], jobs[i]
+			}
+		}
+	}
+	
+	if len(jobs) > limit {
+		jobs = jobs[:limit]
+	}
+	
+	return jobs, nil
+}
+
+func (s *gitlabRunnerService) parseJobFromLog(line string) *Job {
+	// Parse GitLab Runner log lines for job information
+	jobStartRegex := regexp.MustCompile(`job=(\d+).*project=(\d+).*runner=([a-zA-Z0-9_-]+)`)
+	jobStatusRegex := regexp.MustCompile(`job=(\d+).*status=(\w+)`)
+	jobFinishRegex := regexp.MustCompile(`job=(\d+).*duration=([0-9.]+)s`)
+	
+	job := &Job{}
+	
+	// Check for job start
+	if matches := jobStartRegex.FindStringSubmatch(line); len(matches) > 3 {
+		jobID, _ := strconv.Atoi(matches[1])
+		job.ID = jobID
+		job.Project = matches[2]
+		job.RunnerName = matches[3]
+		job.Status = "running"
+		
+		// Try to extract timestamp
+		if idx := strings.Index(line, " "); idx > 0 {
+			timeStr := line[:idx]
+			if t, err := time.Parse("Jan 02 15:04:05", timeStr); err == nil {
+				job.Started = t
+			}
+		}
+		
+		return job
+	}
+	
+	// Check for job status update
+	if matches := jobStatusRegex.FindStringSubmatch(line); len(matches) > 2 {
+		jobID, _ := strconv.Atoi(matches[1])
+		job.ID = jobID
+		job.Status = matches[2]
+		return job
+	}
+	
+	// Check for job completion
+	if matches := jobFinishRegex.FindStringSubmatch(line); len(matches) > 2 {
+		jobID, _ := strconv.Atoi(matches[1])
+		job.ID = jobID
+		job.Status = "completed"
+		
+		if duration, err := strconv.ParseFloat(matches[2], 64); err == nil {
+			job.Duration = time.Duration(duration * float64(time.Second))
+			job.Finished = time.Now()
+		}
+		
+		return job
+	}
+	
+	return nil
+}
+
+func (s *gitlabRunnerService) SetDebugMode(enabled bool) {
+	s.debugMode = enabled
 }

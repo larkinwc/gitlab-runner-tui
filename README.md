@@ -6,8 +6,10 @@ A Terminal User Interface (TUI) for managing GitLab runners on Debian hosts. Thi
 
 - **Runner Management**: View all configured GitLab runners with their status
 - **Log Viewer**: Real-time log viewing with filtering and auto-scroll
+- **Job History**: View recent job runs with runner information, status, and duration
 - **Configuration Editor**: Update runner concurrency, limits, and other settings
 - **System Monitor**: View service status, CPU/memory usage, and restart services
+- **Debug Mode**: Enable verbose logging for troubleshooting
 - **Keyboard Navigation**: Easy tab-based navigation between views
 
 ## Prerequisites
@@ -65,14 +67,28 @@ gitlab-runner-tui
 # Run with custom config path
 gitlab-runner-tui -config /path/to/config.toml
 
+# Run in debug mode for verbose logging
+gitlab-runner-tui -debug
+
+# Show help and default paths
+gitlab-runner-tui -help
+
 # If running without sudo, it will check ~/.gitlab-runner/config.toml
 ```
+
+### Default Config Paths
+
+The tool checks for configuration files in this order:
+1. `/etc/gitlab-runner/config.toml` (system-wide)
+2. `~/.gitlab-runner/config.toml` (user-specific)
+
+You can override with the `-config` flag.
 
 ## Keyboard Shortcuts
 
 ### Global
 - `Tab` / `Shift+Tab`: Navigate between tabs
-- `1-4`: Jump to specific tab (Runners, Logs, Config, System)
+- `1-5`: Jump to specific tab (Runners, Logs, Config, System, History)
 - `q`: Quit (or go back from logs view)
 - `Ctrl+C`: Force quit
 
@@ -98,6 +114,10 @@ gitlab-runner-tui -config /path/to/config.toml
 ### System View
 - `r`: Refresh system status
 - `s`: Restart GitLab Runner service
+
+### History View
+- `r`: Refresh job history
+- `↑/↓`: Navigate job list
 
 ## Configuration
 

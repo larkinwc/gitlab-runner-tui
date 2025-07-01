@@ -20,14 +20,19 @@ type Runner struct {
 }
 
 type Job struct {
-	ID       int
-	Name     string
-	Status   string
-	Stage    string
-	Project  string
-	Pipeline int
-	Started  time.Time
-	Duration time.Duration
+	ID         int
+	Name       string
+	Status     string
+	Stage      string
+	Project    string
+	Pipeline   int
+	Started    time.Time
+	Finished   time.Time
+	Duration   time.Duration
+	RunnerName string
+	RunnerID   string
+	ExitCode   int
+	URL        string
 }
 
 type Config struct {

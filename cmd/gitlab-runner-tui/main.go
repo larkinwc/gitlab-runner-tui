@@ -19,21 +19,26 @@ type model struct {
 	logsView    *ui.LogsView
 	configView  *ui.ConfigView
 	systemView  *ui.SystemView
+	historyView *ui.HistoryView
 	width       int
 	height      int
 	quitting    bool
+	debugMode   bool
 }
 
-func initialModel(configPath string) model {
+func initialModel(configPath string, debugMode bool) model {
 	service := runner.NewService(configPath)
+	service.SetDebugMode(debugMode)
 
 	return model{
-		tabs:        []string{"Runners", "Logs", "Config", "System"},
+		tabs:        []string{"Runners", "Logs", "Config", "System", "History"},
 		activeTab:   0,
 		runnersView: ui.NewRunnersView(service),
 		logsView:    ui.NewLogsView(service),
 		configView:  ui.NewConfigView(configPath),
 		systemView:  ui.NewSystemView(service),
+		historyView: ui.NewHistoryView(service),
+		debugMode:   debugMode,
 	}
 }
 
@@ -43,6 +48,7 @@ func (m model) Init() tea.Cmd {
 		m.logsView.Init(),
 		m.configView.Init(),
 		m.systemView.Init(),
+		m.historyView.Init(),
 	)
 }
 
@@ -58,6 +64,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.logsView.Update(msg)
 		m.configView.Update(msg)
 		m.systemView.Update(msg)
+		m.historyView.Update(msg)
 
 		return m, nil
 
@@ -79,7 +86,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.activeTab = (m.activeTab - 1 + len(m.tabs)) % len(m.tabs)
 			return m, nil
 
-		case "1", "2", "3", "4":
+		case "1", "2", "3", "4", "5":
 			if idx := int(msg.String()[0] - '1'); idx < len(m.tabs) {
 				m.activeTab = idx
 			}
@@ -112,6 +119,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updatedView, cmd := m.systemView.Update(msg)
 		m.systemView = updatedView.(*ui.SystemView)
 		cmds = append(cmds, cmd)
+	case 4:
+		updatedView, cmd := m.historyView.Update(msg)
+		m.historyView = updatedView.(*ui.HistoryView)
+		cmds = append(cmds, cmd)
 	}
 
 	return m, tea.Batch(cmds...)
@@ -134,6 +145,8 @@ func (m model) View() string {
 		content = m.configView.View()
 	case 3:
 		content = m.systemView.View()
+	case 4:
+		content = m.historyView.View()
 	}
 
 	return lipgloss.JoinVertical(
@@ -159,18 +172,49 @@ func (m model) renderTabBar() string {
 
 func main() {
 	var configPath string
-	flag.StringVar(&configPath, "config", "/etc/gitlab-runner/config.toml", "Path to GitLab Runner config file")
+	var debugMode bool
+	var showHelp bool
+	
+	defaultConfig := "/etc/gitlab-runner/config.toml"
+	
+	flag.StringVar(&configPath, "config", defaultConfig, "Path to GitLab Runner config file")
+	flag.BoolVar(&debugMode, "debug", false, "Enable debug mode for verbose logging")
+	flag.BoolVar(&showHelp, "help", false, "Show help information")
+	flag.BoolVar(&showHelp, "h", false, "Show help information")
+	
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "GitLab Runner TUI - Terminal User Interface for managing GitLab runners\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Options:\n")
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\nDefault config paths checked:\n")
+		fmt.Fprintf(os.Stderr, "  1. %s (system-wide)\n", defaultConfig)
+		fmt.Fprintf(os.Stderr, "  2. $HOME/.gitlab-runner/config.toml (user-specific)\n")
+		fmt.Fprintf(os.Stderr, "\nIf no config is found at the default path, the user-specific path is tried.\n")
+	}
+	
 	flag.Parse()
+	
+	if showHelp {
+		flag.Usage()
+		os.Exit(0)
+	}
 
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		altPath := os.ExpandEnv("$HOME/.gitlab-runner/config.toml")
-		if _, err := os.Stat(altPath); err == nil {
-			configPath = altPath
+	// Check if config exists at specified path
+	if configPath == defaultConfig {
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			altPath := os.ExpandEnv("$HOME/.gitlab-runner/config.toml")
+			if _, err := os.Stat(altPath); err == nil {
+				configPath = altPath
+				if debugMode {
+					fmt.Printf("Using config from: %s\n", configPath)
+				}
+			}
 		}
 	}
 
 	p := tea.NewProgram(
-		initialModel(configPath),
+		initialModel(configPath, debugMode),
 		tea.WithAltScreen(),
 		tea.WithMouseCellMotion(),
 	)
