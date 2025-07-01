@@ -13,6 +13,7 @@ build:
 clean:
 	@echo "Cleaning..."
 	@rm -rf $(BUILD_DIR)
+	@rm -f coverage.out coverage.html coverage.txt
 	@go clean
 
 install: build
@@ -28,6 +29,21 @@ run: build
 test:
 	@echo "Running tests..."
 	@go test -v ./...
+
+test-coverage:
+	@echo "Running tests with coverage..."
+	@go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+test-coverage-report:
+	@echo "Coverage summary:"
+	@go tool cover -func=coverage.out | grep total | awk '{print "Total Coverage: " $$3}'
+
+test-ci:
+	@echo "Running tests for CI..."
+	@go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	@go tool cover -func=coverage.out
 
 lint:
 	@echo "Running linter..."

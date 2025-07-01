@@ -152,6 +152,11 @@ func (m model) View() string {
 		return ""
 	}
 
+	// Minimum height check
+	if m.height < 10 {
+		return "Terminal too small. Please resize."
+	}
+
 	tabBar := m.renderTabBar()
 
 	var content string
@@ -171,19 +176,38 @@ func (m model) View() string {
 	statusBar := m.renderStatusBar()
 	
 	// Calculate available height for content
-	availableHeight := m.height - lipgloss.Height(tabBar) - lipgloss.Height(statusBar) - 1
+	tabBarHeight := lipgloss.Height(tabBar)
+	statusBarHeight := lipgloss.Height(statusBar)
+	availableHeight := m.height - tabBarHeight - statusBarHeight - 1
+	
+	// Ensure we have positive height
+	if availableHeight < 1 {
+		availableHeight = 1
+	}
 	
 	// Ensure content doesn't overflow
 	contentLines := strings.Split(content, "\n")
-	if len(contentLines) > availableHeight {
+	if len(contentLines) > availableHeight && availableHeight > 0 {
 		content = strings.Join(contentLines[:availableHeight], "\n")
+	}
+	
+	// Calculate padding
+	contentHeight := lipgloss.Height(content)
+	paddingHeight := m.height - tabBarHeight - contentHeight - statusBarHeight
+	if paddingHeight < 0 {
+		paddingHeight = 0
+	}
+	
+	padding := ""
+	if paddingHeight > 0 {
+		padding = strings.Repeat("\n", paddingHeight)
 	}
 	
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		tabBar,
 		content,
-		strings.Repeat("\n", m.height-lipgloss.Height(tabBar)-lipgloss.Height(content)-lipgloss.Height(statusBar)),
+		padding,
 		statusBar,
 	)
 }

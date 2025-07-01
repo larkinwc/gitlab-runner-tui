@@ -1,5 +1,11 @@
 # GitLab Runner TUI
 
+[![CI](https://github.com/larkinwc/gitlab-runner-tui/actions/workflows/ci.yml/badge.svg)](https://github.com/larkinwc/gitlab-runner-tui/actions/workflows/ci.yml)
+[![Release](https://github.com/larkinwc/gitlab-runner-tui/actions/workflows/release.yml/badge.svg)](https://github.com/larkinwc/gitlab-runner-tui/actions/workflows/release.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/larkinwc/gitlab-runner-tui)](https://goreportcard.com/report/github.com/larkinwc/gitlab-runner-tui)
+[![Go Reference](https://pkg.go.dev/badge/github.com/larkinwc/gitlab-runner-tui.svg)](https://pkg.go.dev/github.com/larkinwc/gitlab-runner-tui)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Terminal User Interface (TUI) for managing GitLab runners on Debian hosts. This tool provides an interactive way to monitor runners, view logs, and update configurations.
 
 ## Features
@@ -143,18 +149,70 @@ The tool reads and modifies the standard GitLab Runner configuration file (usual
 - Service management commands may require sudo privileges
 - Runner tokens are displayed but can be masked in future versions
 
-## Building from Source
+## Development
+
+### Building from Source
 
 ```bash
 # Get dependencies
 go mod download
 
 # Build
-go build -o gitlab-runner-tui cmd/gitlab-runner-tui/main.go
+make build
 
-# Run tests (if available)
-go test ./...
+# Install locally
+make install
 ```
+
+### Testing
+
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage report
+make test-coverage
+
+# View coverage in browser
+open coverage.html
+
+# Run tests with race detection (recommended)
+go test -race ./...
+
+# Generate local coverage badge
+./scripts/coverage-badge.sh
+```
+
+#### Coverage Goals
+
+- Current coverage: ~22.3%
+- Target coverage: 70%
+- Critical paths covered: Terminal size handling, config validation, runner parsing
+
+The project uses both Codecov and Coveralls for tracking test coverage over time. Coverage reports are automatically generated on each push to the main branch.
+
+### Code Quality
+
+```bash
+# Run linter
+make lint
+
+# Format code
+go fmt ./...
+
+# Run security scan
+gosec ./...
+```
+
+### Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests for your changes
+4. Ensure all tests pass (`make test`)
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## License
 

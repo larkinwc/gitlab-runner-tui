@@ -85,7 +85,11 @@ func (s *gitlabRunnerService) parseRunnerLine(line string) *Runner {
 
 	if matches := tokenRegex.FindStringSubmatch(line); len(matches) > 1 {
 		runner.Token = matches[1]
-		runner.ID = matches[1][:8]
+		if len(matches[1]) >= 8 {
+			runner.ID = matches[1][:8]
+		} else {
+			runner.ID = matches[1]
+		}
 	}
 
 	if matches := nameRegex.FindStringSubmatch(line); len(matches) > 1 {
@@ -245,9 +249,9 @@ func (s *gitlabRunnerService) GetSystemStatus() (*SystemStatus, error) {
 }
 
 func extractTimestamp(output string) string {
-	parts := strings.Split(output, "=")
-	if len(parts) > 1 {
-		return strings.TrimSpace(parts[1])
+	idx := strings.Index(output, "=")
+	if idx >= 0 && idx < len(output)-1 {
+		return strings.TrimSpace(output[idx+1:])
 	}
 	return ""
 }
