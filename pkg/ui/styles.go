@@ -15,93 +15,93 @@ var (
 	ColorFg        = lipgloss.Color("#ffffff")
 
 	BaseStyle = lipgloss.NewStyle().
-		Background(ColorBg).
-		Foreground(ColorFg)
+			Background(ColorBg).
+			Foreground(ColorFg)
 
 	TitleStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(ColorPrimary).
-		Background(ColorBg).
-		Padding(0, 1)
+			Bold(true).
+			Foreground(ColorPrimary).
+			Background(ColorBg).
+			Padding(0, 1)
 
 	HeaderStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(ColorFg).
-		Background(ColorPrimary).
-		Padding(0, 1).
-		Width(100)
+			Bold(true).
+			Foreground(ColorFg).
+			Background(ColorPrimary).
+			Padding(0, 1).
+			Width(100)
 
 	TabStyle = lipgloss.NewStyle().
-		Padding(0, 2).
-		Border(lipgloss.RoundedBorder(), true, true, false, true).
-		BorderForeground(ColorMuted)
+			Padding(0, 2).
+			Border(lipgloss.RoundedBorder(), true, true, false, true).
+			BorderForeground(ColorMuted)
 
 	ActiveTabStyle = TabStyle.Copy().
-		Bold(true).
-		BorderForeground(ColorPrimary).
-		Foreground(ColorPrimary)
+			Bold(true).
+			BorderForeground(ColorPrimary).
+			Foreground(ColorPrimary)
 
 	ListItemStyle = lipgloss.NewStyle().
-		PaddingLeft(2).
-		PaddingRight(2)
+			PaddingLeft(2).
+			PaddingRight(2)
 
 	SelectedItemStyle = ListItemStyle.Copy().
-		Foreground(ColorBg).
-		Background(ColorPrimary)
+				Foreground(ColorBg).
+				Background(ColorPrimary)
 
 	StatusActiveStyle = lipgloss.NewStyle().
-		Foreground(ColorSuccess).
-		Bold(true)
+				Foreground(ColorSuccess).
+				Bold(true)
 
 	StatusInactiveStyle = lipgloss.NewStyle().
-		Foreground(ColorError).
-		Bold(true)
+				Foreground(ColorError).
+				Bold(true)
 
 	StatusUnknownStyle = lipgloss.NewStyle().
-		Foreground(ColorMuted)
+				Foreground(ColorMuted)
 
 	InfoBoxStyle = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorSecondary).
-		Padding(1, 2).
-		Margin(1, 0)
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(ColorSecondary).
+			Padding(1, 2).
+			Margin(1, 0)
 
 	ErrorBoxStyle = InfoBoxStyle.Copy().
-		BorderForeground(ColorError)
+			BorderForeground(ColorError)
 
 	SuccessBoxStyle = InfoBoxStyle.Copy().
-		BorderForeground(ColorSuccess)
+			BorderForeground(ColorSuccess)
 
 	LogStyle = lipgloss.NewStyle().
-		Foreground(ColorMuted).
-		PaddingLeft(1)
+			Foreground(ColorMuted).
+			PaddingLeft(1)
 
 	HelpStyle = lipgloss.NewStyle().
-		Foreground(ColorMuted).
-		Padding(1, 0)
+			Foreground(ColorMuted).
+			Padding(1, 0)
 
 	InputStyle = lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorSecondary).
-		Padding(0, 1)
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(ColorSecondary).
+			Padding(0, 1)
 
 	FocusedInputStyle = InputStyle.Copy().
-		BorderForeground(ColorPrimary)
+				BorderForeground(ColorPrimary)
 
 	ButtonStyle = lipgloss.NewStyle().
-		Foreground(ColorFg).
-		Background(ColorSecondary).
-		Padding(0, 2).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorSecondary)
+			Foreground(ColorFg).
+			Background(ColorSecondary).
+			Padding(0, 2).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(ColorSecondary)
 
 	FocusedButtonStyle = ButtonStyle.Copy().
-		Background(ColorPrimary).
-		BorderForeground(ColorPrimary).
-		Bold(true)
+				Background(ColorPrimary).
+				BorderForeground(ColorPrimary).
+				Bold(true)
 
 	SpinnerStyle = lipgloss.NewStyle().
-		Foreground(ColorPrimary)
+			Foreground(ColorPrimary)
 )
 
 func RenderStatus(status string) string {

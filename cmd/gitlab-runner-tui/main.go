@@ -9,23 +9,24 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/larkinwc/gitlab-runner-tui/pkg/config"
 	"github.com/larkinwc/gitlab-runner-tui/pkg/runner"
 	"github.com/larkinwc/gitlab-runner-tui/pkg/ui"
 )
 
 type model struct {
-	tabs         []string
-	activeTab    int
-	runnersView  *ui.RunnersView
-	logsView     *ui.LogsView
-	configView   *ui.ConfigView
-	systemView   *ui.SystemView
-	historyView  *ui.HistoryView
-	width        int
-	height       int
-	quitting     bool
-	debugMode    bool
-	initialized  map[int]bool
+	tabs        []string
+	activeTab   int
+	runnersView *ui.RunnersView
+	logsView    *ui.LogsView
+	configView  *ui.ConfigView
+	systemView  *ui.SystemView
+	historyView *ui.HistoryView
+	width       int
+	height      int
+	quitting    bool
+	debugMode   bool
+	initialized map[int]bool
 }
 
 func initialModel(configPath string, debugMode bool) model {
@@ -174,35 +175,35 @@ func (m model) View() string {
 	}
 
 	statusBar := m.renderStatusBar()
-	
+
 	// Calculate available height for content
 	tabBarHeight := lipgloss.Height(tabBar)
 	statusBarHeight := lipgloss.Height(statusBar)
 	availableHeight := m.height - tabBarHeight - statusBarHeight - 1
-	
+
 	// Ensure we have positive height
 	if availableHeight < 1 {
 		availableHeight = 1
 	}
-	
+
 	// Ensure content doesn't overflow
 	contentLines := strings.Split(content, "\n")
 	if len(contentLines) > availableHeight && availableHeight > 0 {
 		content = strings.Join(contentLines[:availableHeight], "\n")
 	}
-	
+
 	// Calculate padding
 	contentHeight := lipgloss.Height(content)
 	paddingHeight := m.height - tabBarHeight - contentHeight - statusBarHeight
 	if paddingHeight < 0 {
 		paddingHeight = 0
 	}
-	
+
 	padding := ""
 	if paddingHeight > 0 {
 		padding = strings.Repeat("\n", paddingHeight)
 	}
-	
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		tabBar,
@@ -232,18 +233,18 @@ func (m model) renderStatusBar() string {
 		Background(ui.ColorPrimary).
 		Foreground(ui.ColorBg).
 		Padding(0, 1)
-		
+
 	helpStyle := lipgloss.NewStyle().
 		Background(ui.ColorSecondary).
 		Foreground(ui.ColorBg).
 		Padding(0, 1)
-		
+
 	// Build contextual help based on active tab
 	var commands []string
-	
+
 	// Global commands
 	commands = append(commands, "Tab/Shift+Tab: Switch tabs", "1-5: Jump to tab", "q: Quit")
-	
+
 	// Tab-specific commands
 	switch m.activeTab {
 	case 0: // Runners
@@ -257,17 +258,17 @@ func (m model) renderStatusBar() string {
 	case 4: // History
 		commands = append(commands, "↑/↓: Navigate", "r: Refresh")
 	}
-	
+
 	// Add debug mode indicator if enabled
 	statusText := ""
 	if m.debugMode {
 		statusText = " [DEBUG] "
 	}
-	
+
 	// Combine status and help
 	status := statusStyle.Render(statusText + m.tabs[m.activeTab])
 	help := helpStyle.Render(strings.Join(commands, " • "))
-	
+
 	// Fill the remaining width
 	statusBarContent := lipgloss.JoinHorizontal(lipgloss.Top, status, " ", help)
 	remainingWidth := m.width - lipgloss.Width(statusBarContent)
@@ -277,7 +278,7 @@ func (m model) renderStatusBar() string {
 			Render(strings.Repeat(" ", remainingWidth))
 		statusBarContent = lipgloss.JoinHorizontal(lipgloss.Top, statusBarContent, filler)
 	}
-	
+
 	return statusBarContent
 }
 
@@ -285,34 +286,32 @@ func main() {
 	var configPath string
 	var debugMode bool
 	var showHelp bool
-	
-	defaultConfig := "/etc/gitlab-runner/config.toml"
-	
-	flag.StringVar(&configPath, "config", defaultConfig, "Path to GitLab Runner config file")
+
+	flag.StringVar(&configPath, "config", config.DefaultConfigPath, "Path to GitLab Runner config file")
 	flag.BoolVar(&debugMode, "debug", false, "Enable debug mode for verbose logging")
 	flag.BoolVar(&showHelp, "help", false, "Show help information")
 	flag.BoolVar(&showHelp, "h", false, "Show help information")
-	
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "GitLab Runner TUI - Terminal User Interface for managing GitLab runners\n\n")
 		fmt.Fprintf(os.Stderr, "Usage: %s [options]\n\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nDefault config paths checked:\n")
-		fmt.Fprintf(os.Stderr, "  1. %s (system-wide)\n", defaultConfig)
+		fmt.Fprintf(os.Stderr, "  1. %s (system-wide)\n", config.DefaultConfigPath)
 		fmt.Fprintf(os.Stderr, "  2. $HOME/.gitlab-runner/config.toml (user-specific)\n")
 		fmt.Fprintf(os.Stderr, "\nIf no config is found at the default path, the user-specific path is tried.\n")
 	}
-	
+
 	flag.Parse()
-	
+
 	if showHelp {
 		flag.Usage()
 		os.Exit(0)
 	}
 
 	// Check if config exists at specified path
-	if configPath == defaultConfig {
+	if configPath == config.DefaultConfigPath {
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
 			altPath := os.ExpandEnv("$HOME/.gitlab-runner/config.toml")
 			if _, err := os.Stat(altPath); err == nil {

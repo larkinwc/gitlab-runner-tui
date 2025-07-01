@@ -23,12 +23,12 @@ type Service interface {
 }
 
 type SystemStatus struct {
-	ServiceActive   bool
-	ServiceEnabled  bool
-	ProcessCount    int
-	MemoryUsage     int64
-	CPUUsage        float64
-	Uptime          time.Duration
+	ServiceActive  bool
+	ServiceEnabled bool
+	ProcessCount   int
+	MemoryUsage    int64
+	CPUUsage       float64
+	Uptime         time.Duration
 }
 
 type gitlabRunnerService struct {
@@ -36,9 +36,11 @@ type gitlabRunnerService struct {
 	debugMode  bool
 }
 
+const defaultConfigPath = "/etc/gitlab-runner/config.toml"
+
 func NewService(configPath string) Service {
 	if configPath == "" {
-		configPath = "/etc/gitlab-runner/config.toml"
+		configPath = defaultConfigPath
 	}
 	return &gitlabRunnerService{
 		configPath: configPath,
@@ -57,20 +59,20 @@ func (s *gitlabRunnerService) ListRunners() ([]Runner, error) {
 
 func (s *gitlabRunnerService) parseRunnerList(output string) ([]Runner, error) {
 	var runners []Runner
-	
+
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "Listing") {
 			continue
 		}
-		
+
 		runner := s.parseRunnerLine(line)
 		if runner != nil {
 			runners = append(runners, *runner)
 		}
 	}
-	
+
 	return runners, nil
 }
 
@@ -117,7 +119,7 @@ func (s *gitlabRunnerService) GetRunnerStatus(name string) (*Runner, error) {
 		if runner.Name == name {
 			cmd := exec.Command("gitlab-runner", "verify", "--name", name, "--config", s.configPath)
 			output, _ := cmd.CombinedOutput()
-			
+
 			if strings.Contains(string(output), "is alive") {
 				runner.Status = "active"
 				runner.Online = true
@@ -125,7 +127,7 @@ func (s *gitlabRunnerService) GetRunnerStatus(name string) (*Runner, error) {
 				runner.Status = "inactive"
 				runner.Online = false
 			}
-			
+
 			return &runner, nil
 		}
 	}
@@ -138,7 +140,7 @@ func (s *gitlabRunnerService) GetRunnerLogs(name string, lines int) ([]string, e
 	if s.debugMode {
 		args = append(args, "-o", "verbose")
 	}
-	
+
 	cmd := exec.Command("journalctl", args...)
 	output, err := cmd.Output()
 	if err != nil {
@@ -151,7 +153,7 @@ func (s *gitlabRunnerService) GetRunnerLogs(name string, lines int) ([]string, e
 
 	logLines := strings.Split(string(output), "\n")
 	var filteredLogs []string
-	
+
 	for _, line := range logLines {
 		if name == "" || strings.Contains(line, name) {
 			filteredLogs = append(filteredLogs, line)
@@ -163,7 +165,7 @@ func (s *gitlabRunnerService) GetRunnerLogs(name string, lines int) ([]string, e
 
 func (s *gitlabRunnerService) StreamRunnerLogs(name string) (io.ReadCloser, error) {
 	cmd := exec.Command("journalctl", "-u", "gitlab-runner", "-f", "--no-pager")
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create stdout pipe: %w", err)
@@ -178,7 +180,7 @@ func (s *gitlabRunnerService) StreamRunnerLogs(name string) (io.ReadCloser, erro
 	}
 
 	pr, pw := io.Pipe()
-	
+
 	go func() {
 		defer pw.Close()
 		scanner := bufio.NewScanner(stdout)
@@ -217,7 +219,7 @@ func (s *gitlabRunnerService) GetSystemStatus() (*SystemStatus, error) {
 
 	cmd = exec.Command("pgrep", "-c", "gitlab-runner")
 	output, _ = cmd.Output()
-	fmt.Sscanf(string(output), "%d", &status.ProcessCount)
+	_, _ = fmt.Sscanf(string(output), "%d", &status.ProcessCount)
 
 	cmd = exec.Command("ps", "aux")
 	output, _ = cmd.Output()
@@ -227,11 +229,11 @@ func (s *gitlabRunnerService) GetSystemStatus() (*SystemStatus, error) {
 			fields := strings.Fields(line)
 			if len(fields) > 5 {
 				var cpu float64
-				fmt.Sscanf(fields[2], "%f", &cpu)
+				_, _ = fmt.Sscanf(fields[2], "%f", &cpu)
 				status.CPUUsage += cpu
-				
+
 				var mem int64
-				fmt.Sscanf(fields[5], "%d", &mem)
+				_, _ = fmt.Sscanf(fields[5], "%d", &mem)
 				status.MemoryUsage += mem * 1024
 			}
 		}
@@ -258,7 +260,7 @@ func extractTimestamp(output string) string {
 
 func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
 	var jobs []Job
-	
+
 	// Try to get job history from journalctl logs
 	cmd := exec.Command("journalctl", "-u", "gitlab-runner", "-n", fmt.Sprintf("%d", limit*10), "--no-pager", "-r")
 	output, err := cmd.Output()
@@ -273,7 +275,7 @@ func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
 
 	lines := strings.Split(string(output), "\n")
 	jobMap := make(map[int]*Job)
-	
+
 	for _, line := range lines {
 		job := s.parseJobFromLog(line)
 		if job != nil {
@@ -299,17 +301,17 @@ func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
 				jobMap[job.ID] = job
 			}
 		}
-		
+
 		if len(jobMap) >= limit {
 			break
 		}
 	}
-	
+
 	// Convert map to slice
 	for _, job := range jobMap {
 		jobs = append(jobs, *job)
 	}
-	
+
 	// Sort by started time (newest first)
 	for i := 0; i < len(jobs)-1; i++ {
 		for j := i + 1; j < len(jobs); j++ {
@@ -318,11 +320,11 @@ func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
 			}
 		}
 	}
-	
+
 	if len(jobs) > limit {
 		jobs = jobs[:limit]
 	}
-	
+
 	return jobs, nil
 }
 
@@ -331,9 +333,9 @@ func (s *gitlabRunnerService) parseJobFromLog(line string) *Job {
 	jobStartRegex := regexp.MustCompile(`job=(\d+).*project=(\d+).*runner=([a-zA-Z0-9_-]+)`)
 	jobStatusRegex := regexp.MustCompile(`job=(\d+).*status=(\w+)`)
 	jobFinishRegex := regexp.MustCompile(`job=(\d+).*duration=([0-9.]+)s`)
-	
+
 	job := &Job{}
-	
+
 	// Check for job start
 	if matches := jobStartRegex.FindStringSubmatch(line); len(matches) > 3 {
 		jobID, _ := strconv.Atoi(matches[1])
@@ -341,7 +343,7 @@ func (s *gitlabRunnerService) parseJobFromLog(line string) *Job {
 		job.Project = matches[2]
 		job.RunnerName = matches[3]
 		job.Status = "running"
-		
+
 		// Try to extract timestamp
 		if idx := strings.Index(line, " "); idx > 0 {
 			timeStr := line[:idx]
@@ -349,10 +351,10 @@ func (s *gitlabRunnerService) parseJobFromLog(line string) *Job {
 				job.Started = t
 			}
 		}
-		
+
 		return job
 	}
-	
+
 	// Check for job status update
 	if matches := jobStatusRegex.FindStringSubmatch(line); len(matches) > 2 {
 		jobID, _ := strconv.Atoi(matches[1])
@@ -360,21 +362,21 @@ func (s *gitlabRunnerService) parseJobFromLog(line string) *Job {
 		job.Status = matches[2]
 		return job
 	}
-	
+
 	// Check for job completion
 	if matches := jobFinishRegex.FindStringSubmatch(line); len(matches) > 2 {
 		jobID, _ := strconv.Atoi(matches[1])
 		job.ID = jobID
 		job.Status = "completed"
-		
+
 		if duration, err := strconv.ParseFloat(matches[2], 64); err == nil {
 			job.Duration = time.Duration(duration * float64(time.Second))
 			job.Finished = time.Now()
 		}
-		
+
 		return job
 	}
-	
+
 	return nil
 }
 

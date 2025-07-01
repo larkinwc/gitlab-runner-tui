@@ -1,0 +1,108 @@
+linters-settings:
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 15
+  govet:
+    enable:
+      - shadow
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+  funlen:
+    lines: 100
+    statements: 50
+
+linters:
+  disable-all: true
+  enable:
+    - gofmt
+    - govet
+    - errcheck
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+    - gosec
+    - unconvert
+    - dupl
+    - goconst
+    - gocyclo
+    - gocognit
+    - asciicheck
+    - misspell
+    - unparam
+    - dogsled
+    - nakedret
+    - prealloc
+    - gocritic
+    - gochecknoinits
+    - whitespace
+    - lll
+    - revive
+    - goimports
+
+issues:
+  exclude-dirs:
+    - vendor
+    - third_party
+    - testdata
+    - examples
+    - build
+    - dist
+  
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.gen\\.go$"
+    
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - lll
+    
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA1019:"
+
+    # Exclude exported but undocumented for main packages
+    - path: cmd/
+      linters:
+        - golint
+      text: "exported .* should have comment"
+
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+
+  # Maximum count of issues with the same text
+  max-same-issues: 10
+
+  # Show only new issues
+  new: false
+
+run:
+  timeout: 5m

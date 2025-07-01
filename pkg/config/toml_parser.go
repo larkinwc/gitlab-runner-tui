@@ -10,6 +10,8 @@ import (
 	"github.com/larkinwc/gitlab-runner-tui/pkg/runner"
 )
 
+const DefaultConfigPath = "/etc/gitlab-runner/config.toml"
+
 type TOMLConfigManager struct {
 	path   string
 	config *runner.Config
@@ -17,7 +19,7 @@ type TOMLConfigManager struct {
 
 func NewTOMLConfigManager(path string) *TOMLConfigManager {
 	if path == "" {
-		path = "/etc/gitlab-runner/config.toml"
+		path = DefaultConfigPath
 	}
 	return &TOMLConfigManager{
 		path: path,
@@ -62,8 +64,8 @@ func (cm *TOMLConfigManager) Save() error {
 	}
 
 	if err := os.Rename(tmpFile, cm.path); err != nil {
-		os.Rename(backupFile, cm.path)
-		os.Remove(tmpFile)
+		_ = os.Rename(backupFile, cm.path)
+		_ = os.Remove(tmpFile)
 		return fmt.Errorf("failed to replace config file: %w", err)
 	}
 

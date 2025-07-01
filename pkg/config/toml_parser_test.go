@@ -35,7 +35,7 @@ log_level = "info"
 	tmpFile.Close()
 
 	cm := NewTOMLConfigManager(tmpFile.Name())
-	
+
 	if err := cm.Load(); err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -211,7 +211,7 @@ func TestTOMLConfigManager_Updates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.testFunc()
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Error("expected error, got nil")
@@ -348,7 +348,7 @@ func TestTOMLConfigManager_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cm := &TOMLConfigManager{config: tt.config}
 			err := cm.Validate()
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Error("expected error, got nil")
@@ -366,24 +366,24 @@ func TestTOMLConfigManager_Validate(t *testing.T) {
 
 func TestTOMLConfigManager_NoConfigLoaded(t *testing.T) {
 	cm := &TOMLConfigManager{}
-	
+
 	// Test all methods that require config to be loaded
 	if err := cm.UpdateConcurrency(5); err == nil {
 		t.Error("expected error when no config loaded")
 	}
-	
+
 	if err := cm.UpdateCheckInterval(5); err == nil {
 		t.Error("expected error when no config loaded")
 	}
-	
+
 	if err := cm.UpdateLogLevel("info"); err == nil {
 		t.Error("expected error when no config loaded")
 	}
-	
+
 	if err := cm.Save(); err == nil {
 		t.Error("expected error when no config loaded")
 	}
-	
+
 	if runner, idx := cm.GetRunner("test"); runner != nil || idx != -1 {
 		t.Error("expected nil runner and -1 index when no config loaded")
 	}
@@ -395,10 +395,10 @@ func TestNewTOMLConfigManager(t *testing.T) {
 	if cm.path != "/custom/path.toml" {
 		t.Errorf("path = %q, expected %q", cm.path, "/custom/path.toml")
 	}
-	
+
 	// Test with empty path (should use default)
 	cm = NewTOMLConfigManager("")
-	if cm.path != "/etc/gitlab-runner/config.toml" {
-		t.Errorf("path = %q, expected default path", cm.path)
+	if cm.path != DefaultConfigPath {
+		t.Errorf("path = %q, expected default path %q", cm.path, DefaultConfigPath)
 	}
 }

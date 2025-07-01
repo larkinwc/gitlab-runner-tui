@@ -51,19 +51,19 @@ func TestParseRunnerLine(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := s.parseRunnerLine(tt.line)
-			
+
 			if tt.expected == nil {
 				if result != nil {
 					t.Errorf("expected nil, got %+v", result)
 				}
 				return
 			}
-			
+
 			if result == nil {
 				t.Error("expected runner, got nil")
 				return
 			}
-			
+
 			if result.Name != tt.expected.Name {
 				t.Errorf("Name = %q, expected %q", result.Name, tt.expected.Name)
 			}
@@ -148,19 +148,19 @@ func TestParseJobFromLog(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := s.parseJobFromLog(tt.line)
-			
+
 			if !tt.hasJob {
 				if result != nil {
 					t.Errorf("expected nil, got %+v", result)
 				}
 				return
 			}
-			
+
 			if result == nil {
 				t.Error("expected job, got nil")
 				return
 			}
-			
+
 			tt.validate(t, result)
 		})
 	}
@@ -233,18 +233,18 @@ Name=runner3 Token=token3 Executor=kubernetes
 
 func TestSetDebugMode(t *testing.T) {
 	s := &gitlabRunnerService{}
-	
+
 	// Initially should be false
 	if s.debugMode {
 		t.Error("debugMode should be false initially")
 	}
-	
+
 	// Set to true
 	s.SetDebugMode(true)
 	if !s.debugMode {
 		t.Error("debugMode should be true after setting")
 	}
-	
+
 	// Set to false
 	s.SetDebugMode(false)
 	if s.debugMode {
@@ -263,7 +263,7 @@ func TestNewService(t *testing.T) {
 	} else {
 		t.Error("NewService did not return *gitlabRunnerService")
 	}
-	
+
 	// Test with empty path (should use default)
 	service = NewService("")
 	if s, ok := service.(*gitlabRunnerService); ok {
@@ -277,7 +277,7 @@ func TestGetRunnerLogs_DebugMode(t *testing.T) {
 	s := &gitlabRunnerService{
 		debugMode: true,
 	}
-	
+
 	// This test would need to mock exec.Command, which is complex
 	// For now, we just ensure the method handles debug mode without panicking
 	_, err := s.GetRunnerLogs("test-runner", 10)
@@ -285,7 +285,7 @@ func TestGetRunnerLogs_DebugMode(t *testing.T) {
 	if err == nil {
 		t.Skip("Skipping test that requires journalctl")
 	}
-	
+
 	// The important thing is that it didn't panic
 	if !strings.Contains(err.Error(), "failed to get logs") {
 		t.Errorf("unexpected error: %v", err)

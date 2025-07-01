@@ -279,26 +279,26 @@ func (v *ConfigView) saveConfig() tea.Msg {
 	}
 
 	if concurrent, err := strconv.Atoi(v.inputs[inputConcurrent].Value()); err == nil {
-		v.configMgr.UpdateConcurrency(concurrent)
+		_ = v.configMgr.UpdateConcurrency(concurrent)
 	}
 
 	if interval, err := strconv.Atoi(v.inputs[inputCheckInterval].Value()); err == nil {
-		v.configMgr.UpdateCheckInterval(interval)
+		_ = v.configMgr.UpdateCheckInterval(interval)
 	}
 
 	if logLevel := v.inputs[inputLogLevel].Value(); logLevel != "" {
-		v.configMgr.UpdateLogLevel(logLevel)
+		_ = v.configMgr.UpdateLogLevel(logLevel)
 	}
 
 	if v.editingRunner && len(v.config.Runners) > 0 {
 		runner := v.config.Runners[v.selectedRunner]
 
 		if limit, err := strconv.Atoi(v.inputs[inputRunnerLimit].Value()); err == nil {
-			v.configMgr.UpdateRunnerLimit(runner.Name, limit)
+			_ = v.configMgr.UpdateRunnerLimit(runner.Name, limit)
 		}
 
 		if maxBuilds, err := strconv.Atoi(v.inputs[inputRunnerMaxBuilds].Value()); err == nil {
-			v.configMgr.UpdateRunnerMaxBuilds(runner.Name, maxBuilds)
+			_ = v.configMgr.UpdateRunnerMaxBuilds(runner.Name, maxBuilds)
 		}
 
 		if tags := v.inputs[inputRunnerTags].Value(); tags != "" {
@@ -306,7 +306,7 @@ func (v *ConfigView) saveConfig() tea.Msg {
 			for i := range tagList {
 				tagList[i] = strings.TrimSpace(tagList[i])
 			}
-			v.configMgr.UpdateRunnerTags(runner.Name, tagList)
+			_ = v.configMgr.UpdateRunnerTags(runner.Name, tagList)
 		}
 	}
 

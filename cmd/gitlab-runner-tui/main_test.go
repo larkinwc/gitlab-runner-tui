@@ -116,11 +116,11 @@ func TestModelSwitchTab(t *testing.T) {
 	// Test switching to uninitialized tab
 	m.activeTab = 1
 	newModel, cmd := m.switchTab()
-	
+
 	if !newModel.initialized[1] {
 		t.Error("Tab 1 should be marked as initialized")
 	}
-	
+
 	if cmd == nil {
 		t.Error("Expected init command for uninitialized tab")
 	}
@@ -129,7 +129,7 @@ func TestModelSwitchTab(t *testing.T) {
 	m.initialized[2] = true
 	m.activeTab = 2
 	newModel, cmd = m.switchTab()
-	
+
 	if cmd != nil {
 		t.Error("Expected no command for already initialized tab")
 	}

@@ -13,14 +13,14 @@ import (
 )
 
 type HistoryView struct {
-	table    table.Model
-	jobs     []runner.Job
-	service  runner.Service
-	width    int
-	height   int
-	loading  bool
-	spinner  spinner.Model
-	err      error
+	table   table.Model
+	jobs    []runner.Job
+	service runner.Service
+	width   int
+	height  int
+	loading bool
+	spinner spinner.Model
+	err     error
 }
 
 func NewHistoryView(service runner.Service) *HistoryView {
@@ -142,7 +142,7 @@ func (v *HistoryView) View() string {
 		content = append(content, InfoBoxStyle.Render("No job history available"))
 	} else {
 		content = append(content, v.table.View())
-		content = append(content, "", 
+		content = append(content, "",
 			lipgloss.NewStyle().Foreground(ColorMuted).Render(
 				fmt.Sprintf("Showing %d recent jobs", len(v.jobs)),
 			),
