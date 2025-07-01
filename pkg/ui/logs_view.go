@@ -132,14 +132,7 @@ func (v *LogsView) View() string {
 		)
 	}
 
-	help := []string{
-		"'r' refresh",
-		"'a' toggle auto-scroll",
-		"'g'/'G' top/bottom",
-		"'c' clear",
-		"'q' back",
-	}
-	content = append(content, "", HelpStyle.Render(strings.Join(help, " • ")))
+	// Help is now shown in the status bar
 
 	return lipgloss.JoinVertical(lipgloss.Left, content...)
 }

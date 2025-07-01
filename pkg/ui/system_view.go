@@ -145,12 +145,7 @@ func (v *SystemView) View() string {
 		content = append(content, v.memProgress.ViewAs(memPercent))
 	}
 
-	help := []string{
-		"'r' refresh",
-		"'s' restart service",
-		"'q' back",
-	}
-	content = append(content, "", HelpStyle.Render(lipgloss.JoinHorizontal(lipgloss.Left, help...)))
+	// Help is now shown in the status bar
 
 	return lipgloss.JoinVertical(lipgloss.Left, content...)
 }

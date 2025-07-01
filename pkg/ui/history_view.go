@@ -149,7 +149,7 @@ func (v *HistoryView) View() string {
 		)
 	}
 
-	content = append(content, "", HelpStyle.Render("Press 'r' to refresh • 'q' to go back"))
+	// Help is now shown in the status bar
 
 	return lipgloss.JoinVertical(lipgloss.Left, content...)
 }

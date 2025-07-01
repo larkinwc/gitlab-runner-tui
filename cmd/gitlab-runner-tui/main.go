@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -13,24 +14,25 @@ import (
 )
 
 type model struct {
-	tabs        []string
-	activeTab   int
-	runnersView *ui.RunnersView
-	logsView    *ui.LogsView
-	configView  *ui.ConfigView
-	systemView  *ui.SystemView
-	historyView *ui.HistoryView
-	width       int
-	height      int
-	quitting    bool
-	debugMode   bool
+	tabs         []string
+	activeTab    int
+	runnersView  *ui.RunnersView
+	logsView     *ui.LogsView
+	configView   *ui.ConfigView
+	systemView   *ui.SystemView
+	historyView  *ui.HistoryView
+	width        int
+	height       int
+	quitting     bool
+	debugMode    bool
+	initialized  map[int]bool
 }
 
 func initialModel(configPath string, debugMode bool) model {
 	service := runner.NewService(configPath)
 	service.SetDebugMode(debugMode)
 
-	return model{
+	m := model{
 		tabs:        []string{"Runners", "Logs", "Config", "System", "History"},
 		activeTab:   0,
 		runnersView: ui.NewRunnersView(service),
@@ -39,17 +41,15 @@ func initialModel(configPath string, debugMode bool) model {
 		systemView:  ui.NewSystemView(service),
 		historyView: ui.NewHistoryView(service),
 		debugMode:   debugMode,
+		initialized: make(map[int]bool),
 	}
+	m.initialized[0] = true // Mark first tab as initialized
+	return m
 }
 
 func (m model) Init() tea.Cmd {
-	return tea.Batch(
-		m.runnersView.Init(),
-		m.logsView.Init(),
-		m.configView.Init(),
-		m.systemView.Init(),
-		m.historyView.Init(),
-	)
+	// Only initialize the first view
+	return m.runnersView.Init()
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -80,15 +80,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "tab":
 			m.activeTab = (m.activeTab + 1) % len(m.tabs)
-			return m, nil
+			return m.switchTab()
 
 		case "shift+tab":
 			m.activeTab = (m.activeTab - 1 + len(m.tabs)) % len(m.tabs)
-			return m, nil
+			return m.switchTab()
 
 		case "1", "2", "3", "4", "5":
 			if idx := int(msg.String()[0] - '1'); idx < len(m.tabs) {
 				m.activeTab = idx
+				return m.switchTab()
 			}
 			return m, nil
 
@@ -97,6 +98,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if runner := m.runnersView.GetSelectedRunner(); runner != nil {
 					m.logsView.SetRunner(runner.Name)
 					m.activeTab = 1
+					return m.switchTab()
 				}
 			}
 		}
@@ -128,6 +130,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+func (m model) switchTab() (model, tea.Cmd) {
+	if !m.initialized[m.activeTab] {
+		m.initialized[m.activeTab] = true
+		switch m.activeTab {
+		case 1:
+			return m, m.logsView.Init()
+		case 2:
+			return m, m.configView.Init()
+		case 3:
+			return m, m.systemView.Init()
+		case 4:
+			return m, m.historyView.Init()
+		}
+	}
+	return m, nil
+}
+
 func (m model) View() string {
 	if m.quitting {
 		return ""
@@ -149,10 +168,23 @@ func (m model) View() string {
 		content = m.historyView.View()
 	}
 
+	statusBar := m.renderStatusBar()
+	
+	// Calculate available height for content
+	availableHeight := m.height - lipgloss.Height(tabBar) - lipgloss.Height(statusBar) - 1
+	
+	// Ensure content doesn't overflow
+	contentLines := strings.Split(content, "\n")
+	if len(contentLines) > availableHeight {
+		content = strings.Join(contentLines[:availableHeight], "\n")
+	}
+	
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		tabBar,
 		content,
+		strings.Repeat("\n", m.height-lipgloss.Height(tabBar)-lipgloss.Height(content)-lipgloss.Height(statusBar)),
+		statusBar,
 	)
 }
 
@@ -168,6 +200,61 @@ func (m model) renderTabBar() string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, tabs...)
+}
+
+func (m model) renderStatusBar() string {
+	// Create styles for the status bar
+	statusStyle := lipgloss.NewStyle().
+		Background(ui.ColorPrimary).
+		Foreground(ui.ColorBg).
+		Padding(0, 1)
+		
+	helpStyle := lipgloss.NewStyle().
+		Background(ui.ColorSecondary).
+		Foreground(ui.ColorBg).
+		Padding(0, 1)
+		
+	// Build contextual help based on active tab
+	var commands []string
+	
+	// Global commands
+	commands = append(commands, "Tab/Shift+Tab: Switch tabs", "1-5: Jump to tab", "q: Quit")
+	
+	// Tab-specific commands
+	switch m.activeTab {
+	case 0: // Runners
+		commands = append(commands, "↑/↓: Navigate", "Enter: View logs", "r: Refresh")
+	case 1: // Logs
+		commands = append(commands, "↑/↓: Scroll", "g/G: Top/Bottom", "a: Auto-scroll", "c: Clear", "r: Refresh")
+	case 2: // Config
+		commands = append(commands, "Tab: Next field", "Ctrl+S: Save", "r: Edit runners")
+	case 3: // System
+		commands = append(commands, "r: Refresh", "s: Restart service")
+	case 4: // History
+		commands = append(commands, "↑/↓: Navigate", "r: Refresh")
+	}
+	
+	// Add debug mode indicator if enabled
+	statusText := ""
+	if m.debugMode {
+		statusText = " [DEBUG] "
+	}
+	
+	// Combine status and help
+	status := statusStyle.Render(statusText + m.tabs[m.activeTab])
+	help := helpStyle.Render(strings.Join(commands, " • "))
+	
+	// Fill the remaining width
+	statusBarContent := lipgloss.JoinHorizontal(lipgloss.Top, status, " ", help)
+	remainingWidth := m.width - lipgloss.Width(statusBarContent)
+	if remainingWidth > 0 {
+		filler := lipgloss.NewStyle().
+			Background(ui.ColorSecondary).
+			Render(strings.Repeat(" ", remainingWidth))
+		statusBarContent = lipgloss.JoinHorizontal(lipgloss.Top, statusBarContent, filler)
+	}
+	
+	return statusBarContent
 }
 
 func main() {

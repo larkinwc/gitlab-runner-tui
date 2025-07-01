@@ -136,7 +136,7 @@ func (v *RunnersView) View() string {
 		content = append(content, v.table.View())
 	}
 
-	content = append(content, "", HelpStyle.Render("Press 'r' to refresh • 'enter' to view details • 'q' to quit"))
+	// Help is now shown in the status bar
 
 	return lipgloss.JoinVertical(lipgloss.Left, content...)
 }

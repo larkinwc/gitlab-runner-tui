@@ -228,18 +228,7 @@ func (v *ConfigView) View() string {
 		content = append(content, "", SuccessBoxStyle.Render(v.successMsg))
 	}
 
-	help := []string{
-		"'tab' navigate",
-		"'ctrl+s' save",
-	}
-	if !v.editingRunner {
-		help = append(help, "'r' edit runners")
-	} else {
-		help = append(help, "'↑/↓' select runner", "'esc' back")
-	}
-	help = append(help, "'q' quit")
-
-	content = append(content, "", HelpStyle.Render(strings.Join(help, " • ")))
+	// Help is now shown in the status bar
 
 	return lipgloss.JoinVertical(lipgloss.Left, content...)
 }
