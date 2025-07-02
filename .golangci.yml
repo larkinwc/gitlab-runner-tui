@@ -21,6 +21,7 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
+      - hugeParam
   funlen:
     lines: 100
     statements: 50
@@ -92,6 +93,12 @@ issues:
       linters:
         - revive
       text: "exported .* should have comment"
+    
+    # Exclude RunnerConfig stuttering issue (would be breaking change)
+    - path: pkg/runner/types.go
+      linters:
+        - revive
+      text: "type name will be used as runner.RunnerConfig by other packages"
 
   # Maximum issues count per one linter
   max-issues-per-linter: 50
