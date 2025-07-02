@@ -115,12 +115,12 @@ func RenderStatus(status string) string {
 	}
 }
 
-func TruncateString(s string, max int) string {
-	if len(s) <= max {
+func TruncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
 		return s
 	}
-	if max <= 3 {
-		return s[:max]
+	if maxLen <= 3 {
+		return s[:maxLen]
 	}
-	return s[:max-3] + "..."
+	return s[:maxLen-3] + "..."
 }

@@ -75,104 +75,29 @@ func (v *ConfigView) Init() tea.Cmd {
 }
 
 func (v *ConfigView) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		v.width = msg.Width
-		v.height = msg.Height
-		return v, nil
-
+		return v.handleWindowSize(msg)
 	case configLoadedMsg:
-		v.config = msg.config
-		v.err = msg.err
-		if v.config != nil {
-			v.updateInputs()
-		}
-		return v, nil
-
+		return v.handleConfigLoaded(msg)
 	case configSavedMsg:
-		if msg.err != nil {
-			v.err = msg.err
-			v.successMsg = ""
-		} else {
-			v.err = nil
-			v.successMsg = "Configuration saved successfully!"
-		}
-		return v, nil
-
+		return v.handleConfigSaved(msg)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "tab", "shift+tab":
-			v.err = nil
-			v.successMsg = ""
-			if msg.String() == "tab" {
-				v.focusIndex++
-			} else {
-				v.focusIndex--
-			}
-
-			inputsCount := 3
-			if v.editingRunner {
-				inputsCount = 6
-			}
-
-			if v.focusIndex < 0 {
-				v.focusIndex = inputsCount - 1
-			} else if v.focusIndex >= inputsCount {
-				v.focusIndex = 0
-			}
-
-			for i := range v.inputs {
-				if i == v.focusIndex {
-					v.inputs[i].Focus()
-				} else {
-					v.inputs[i].Blur()
-				}
-			}
-			return v, nil
-
+			return v.handleTabKey(msg.String() == "tab")
 		case "ctrl+s":
 			return v, v.saveConfig
-
 		case "r", "R":
-			if !v.editingRunner {
-				v.editingRunner = true
-				v.focusIndex = 3
-				v.updateRunnerInputs()
-			}
-
+			return v.handleRunnerEditToggle()
 		case "esc":
-			if v.editingRunner {
-				v.editingRunner = false
-				v.focusIndex = 0
-			}
-
+			return v.handleEscape()
 		case "up", "down":
-			if v.editingRunner && v.config != nil && len(v.config.Runners) > 0 {
-				if msg.String() == "up" {
-					v.selectedRunner--
-					if v.selectedRunner < 0 {
-						v.selectedRunner = len(v.config.Runners) - 1
-					}
-				} else {
-					v.selectedRunner++
-					if v.selectedRunner >= len(v.config.Runners) {
-						v.selectedRunner = 0
-					}
-				}
-				v.updateRunnerInputs()
-			}
+			return v.handleArrowKeys(msg.String() == "up")
 		}
 	}
 
-	for i := range v.inputs {
-		var cmd tea.Cmd
-		v.inputs[i], cmd = v.inputs[i].Update(msg)
-		cmds = append(cmds, cmd)
-	}
-
-	return v, tea.Batch(cmds...)
+	return v.updateAllInputs(msg)
 }
 
 func (v *ConfigView) View() string {
@@ -189,8 +114,7 @@ func (v *ConfigView) View() string {
 	}
 
 	if !v.editingRunner {
-		content = append(content, TitleStyle.Render("Global Settings"))
-		content = append(content, "")
+		content = append(content, TitleStyle.Render("Global Settings"), "")
 
 		for i := 0; i < 3; i++ {
 			style := InputStyle
@@ -200,17 +124,17 @@ func (v *ConfigView) View() string {
 			content = append(content, style.Render(v.inputs[i].View()))
 		}
 
-		content = append(content, "")
-		content = append(content, InfoBoxStyle.Render(fmt.Sprintf("Total Runners: %d", len(v.config.Runners))))
+		content = append(content, "", InfoBoxStyle.Render(fmt.Sprintf("Total Runners: %d", len(v.config.Runners))))
 	} else {
 		if len(v.config.Runners) == 0 {
 			content = append(content, ErrorBoxStyle.Render("No runners configured"))
 		} else {
 			runner := v.config.Runners[v.selectedRunner]
-			content = append(content, TitleStyle.Render(fmt.Sprintf("Runner: %s (%d/%d)", runner.Name, v.selectedRunner+1, len(v.config.Runners))))
-			content = append(content, "")
-			content = append(content, fmt.Sprintf("Executor: %s", runner.Executor))
-			content = append(content, "")
+			content = append(content,
+				TitleStyle.Render(fmt.Sprintf("Runner: %s (%d/%d)", runner.Name, v.selectedRunner+1, len(v.config.Runners))),
+				"",
+				fmt.Sprintf("Executor: %s", runner.Executor),
+				"")
 
 			for i := 3; i < 6; i++ {
 				style := InputStyle
@@ -328,4 +252,108 @@ type configLoadedMsg struct {
 
 type configSavedMsg struct {
 	err error
+}
+
+func (v *ConfigView) handleWindowSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+	v.width = msg.Width
+	v.height = msg.Height
+	return v, nil
+}
+
+func (v *ConfigView) handleConfigLoaded(msg configLoadedMsg) (tea.Model, tea.Cmd) {
+	v.config = msg.config
+	v.err = msg.err
+	if v.config != nil {
+		v.updateInputs()
+	}
+	return v, nil
+}
+
+func (v *ConfigView) handleConfigSaved(msg configSavedMsg) (tea.Model, tea.Cmd) {
+	if msg.err != nil {
+		v.err = msg.err
+		v.successMsg = ""
+	} else {
+		v.err = nil
+		v.successMsg = "Configuration saved successfully!"
+	}
+	return v, nil
+}
+
+func (v *ConfigView) handleTabKey(forward bool) (tea.Model, tea.Cmd) {
+	v.err = nil
+	v.successMsg = ""
+
+	if forward {
+		v.focusIndex++
+	} else {
+		v.focusIndex--
+	}
+
+	inputsCount := 3
+	if v.editingRunner {
+		inputsCount = 6
+	}
+
+	if v.focusIndex < 0 {
+		v.focusIndex = inputsCount - 1
+	} else if v.focusIndex >= inputsCount {
+		v.focusIndex = 0
+	}
+
+	for i := range v.inputs {
+		if i == v.focusIndex {
+			v.inputs[i].Focus()
+		} else {
+			v.inputs[i].Blur()
+		}
+	}
+	return v, nil
+}
+
+func (v *ConfigView) handleRunnerEditToggle() (tea.Model, tea.Cmd) {
+	if !v.editingRunner {
+		v.editingRunner = true
+		v.focusIndex = 3
+		v.updateRunnerInputs()
+	}
+	return v, nil
+}
+
+func (v *ConfigView) handleEscape() (tea.Model, tea.Cmd) {
+	if v.editingRunner {
+		v.editingRunner = false
+		v.focusIndex = 0
+	}
+	return v, nil
+}
+
+func (v *ConfigView) handleArrowKeys(up bool) (tea.Model, tea.Cmd) {
+	if v.editingRunner && v.config != nil && len(v.config.Runners) > 0 {
+		if up {
+			v.selectedRunner--
+			if v.selectedRunner < 0 {
+				v.selectedRunner = len(v.config.Runners) - 1
+			}
+		} else {
+			v.selectedRunner++
+			if v.selectedRunner >= len(v.config.Runners) {
+				v.selectedRunner = 0
+			}
+		}
+		v.updateRunnerInputs()
+	}
+	return v, nil
+}
+
+func (v *ConfigView) updateAllInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := make([]tea.Cmd, 0, len(v.inputs))
+
+	for i := range v.inputs {
+		var cmd tea.Cmd
+		v.inputs[i], cmd = v.inputs[i].Update(msg)
+		cmds = append(cmds, cmd)
+	}
+
+	return v, tea.Batch(cmds...)
 }

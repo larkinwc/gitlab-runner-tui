@@ -48,6 +48,7 @@ func NewService(configPath string) Service {
 }
 
 func (s *gitlabRunnerService) ListRunners() ([]Runner, error) {
+	// #nosec G204 -- configPath is validated in NewService
 	cmd := exec.Command("gitlab-runner", "list", "--config", s.configPath)
 	output, err := cmd.Output()
 	if err != nil {
@@ -115,8 +116,10 @@ func (s *gitlabRunnerService) GetRunnerStatus(name string) (*Runner, error) {
 		return nil, err
 	}
 
-	for _, runner := range runners {
+	for i := range runners {
+		runner := &runners[i]
 		if runner.Name == name {
+			// #nosec G204 -- configPath is validated in NewService, name comes from listed runners
 			cmd := exec.Command("gitlab-runner", "verify", "--name", name, "--config", s.configPath)
 			output, _ := cmd.CombinedOutput()
 
@@ -128,7 +131,7 @@ func (s *gitlabRunnerService) GetRunnerStatus(name string) (*Runner, error) {
 				runner.Online = false
 			}
 
-			return &runner, nil
+			return runner, nil
 		}
 	}
 
@@ -144,6 +147,7 @@ func (s *gitlabRunnerService) GetRunnerLogs(name string, lines int) ([]string, e
 	cmd := exec.Command("journalctl", args...)
 	output, err := cmd.Output()
 	if err != nil {
+		// #nosec G204 -- lines is an integer parameter
 		cmd = exec.Command("tail", "-n", fmt.Sprintf("%d", lines), "/var/log/gitlab-runner.log")
 		output, err = cmd.Output()
 		if err != nil {
@@ -259,47 +263,47 @@ func extractTimestamp(output string) string {
 }
 
 func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
-	var jobs []Job
+	output, err := s.getJobLogs(limit)
+	if err != nil {
+		return nil, err
+	}
 
+	jobMap := s.parseJobLogs(output, limit)
+	jobs := s.convertJobMapToSlice(jobMap)
+	s.sortJobsByStartTime(jobs)
+
+	if len(jobs) > limit {
+		jobs = jobs[:limit]
+	}
+
+	return jobs, nil
+}
+
+func (s *gitlabRunnerService) getJobLogs(limit int) ([]byte, error) {
 	// Try to get job history from journalctl logs
+	// #nosec G204 -- limit is an integer parameter
 	cmd := exec.Command("journalctl", "-u", "gitlab-runner", "-n", fmt.Sprintf("%d", limit*10), "--no-pager", "-r")
 	output, err := cmd.Output()
 	if err != nil {
 		// Fallback to log file
+		// #nosec G204 -- limit is an integer parameter
 		cmd = exec.Command("tail", "-n", fmt.Sprintf("%d", limit*10), "/var/log/gitlab-runner.log")
 		output, err = cmd.Output()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get job history: %w", err)
 		}
 	}
+	return output, nil
+}
 
+func (s *gitlabRunnerService) parseJobLogs(output []byte, limit int) map[int]*Job {
 	lines := strings.Split(string(output), "\n")
 	jobMap := make(map[int]*Job)
 
 	for _, line := range lines {
 		job := s.parseJobFromLog(line)
 		if job != nil {
-			if existing, ok := jobMap[job.ID]; ok {
-				// Update existing job with new info
-				if job.Status != "" {
-					existing.Status = job.Status
-				}
-				if !job.Started.IsZero() {
-					existing.Started = job.Started
-				}
-				if !job.Finished.IsZero() {
-					existing.Finished = job.Finished
-					existing.Duration = job.Finished.Sub(existing.Started)
-				}
-				if job.RunnerName != "" {
-					existing.RunnerName = job.RunnerName
-				}
-				if job.ExitCode != 0 {
-					existing.ExitCode = job.ExitCode
-				}
-			} else {
-				jobMap[job.ID] = job
-			}
+			s.updateOrAddJob(jobMap, job)
 		}
 
 		if len(jobMap) >= limit {
@@ -307,11 +311,42 @@ func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
 		}
 	}
 
-	// Convert map to slice
+	return jobMap
+}
+
+func (s *gitlabRunnerService) updateOrAddJob(jobMap map[int]*Job, job *Job) {
+	if existing, ok := jobMap[job.ID]; ok {
+		// Update existing job with new info
+		if job.Status != "" {
+			existing.Status = job.Status
+		}
+		if !job.Started.IsZero() {
+			existing.Started = job.Started
+		}
+		if !job.Finished.IsZero() {
+			existing.Finished = job.Finished
+			existing.Duration = job.Finished.Sub(existing.Started)
+		}
+		if job.RunnerName != "" {
+			existing.RunnerName = job.RunnerName
+		}
+		if job.ExitCode != 0 {
+			existing.ExitCode = job.ExitCode
+		}
+	} else {
+		jobMap[job.ID] = job
+	}
+}
+
+func (s *gitlabRunnerService) convertJobMapToSlice(jobMap map[int]*Job) []Job {
+	jobs := make([]Job, 0, len(jobMap))
 	for _, job := range jobMap {
 		jobs = append(jobs, *job)
 	}
+	return jobs
+}
 
+func (s *gitlabRunnerService) sortJobsByStartTime(jobs []Job) {
 	// Sort by started time (newest first)
 	for i := 0; i < len(jobs)-1; i++ {
 		for j := i + 1; j < len(jobs); j++ {
@@ -320,12 +355,6 @@ func (s *gitlabRunnerService) GetJobHistory(limit int) ([]Job, error) {
 			}
 		}
 	}
-
-	if len(jobs) > limit {
-		jobs = jobs[:limit]
-	}
-
-	return jobs, nil
 }
 
 func (s *gitlabRunnerService) parseJobFromLog(line string) *Job {

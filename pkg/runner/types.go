@@ -50,29 +50,29 @@ type SessionServerConfig struct {
 }
 
 type RunnerConfig struct {
-	Name                 string            `yaml:"name"`
-	URL                  string            `yaml:"url"`
-	Token                string            `yaml:"token"`
-	Executor             string            `yaml:"executor"`
-	Shell                string            `yaml:"shell,omitempty"`
-	Builds_dir           string            `yaml:"builds_dir,omitempty"`
-	Cache_dir            string            `yaml:"cache_dir,omitempty"`
-	Environment          []string          `yaml:"environment,omitempty"`
-	Request_concurrency  int               `yaml:"request_concurrency,omitempty"`
-	Output_limit         int               `yaml:"output_limit,omitempty"`
-	Pre_clone_script     string            `yaml:"pre_clone_script,omitempty"`
-	Pre_build_script     string            `yaml:"pre_build_script,omitempty"`
-	Post_build_script    string            `yaml:"post_build_script,omitempty"`
-	Clone_url            string            `yaml:"clone_url,omitempty"`
-	Debug_trace_disabled bool              `yaml:"debug_trace_disabled,omitempty"`
-	TagList              []string          `yaml:"tag_list,omitempty"`
-	RunUntagged          bool              `yaml:"run_untagged,omitempty"`
-	Locked               bool              `yaml:"locked,omitempty"`
-	Limit                int               `yaml:"limit,omitempty"`
-	MaxBuilds            int               `yaml:"max_builds,omitempty"`
-	Docker               *DockerConfig     `yaml:"docker,omitempty"`
-	Machine              *MachineConfig    `yaml:"machine,omitempty"`
-	Kubernetes           *KubernetesConfig `yaml:"kubernetes,omitempty"`
+	Name               string            `yaml:"name"`
+	URL                string            `yaml:"url"`
+	Token              string            `yaml:"token"`
+	Executor           string            `yaml:"executor"`
+	Shell              string            `yaml:"shell,omitempty"`
+	BuildsDir          string            `yaml:"builds_dir,omitempty"`
+	CacheDir           string            `yaml:"cache_dir,omitempty"`
+	Environment        []string          `yaml:"environment,omitempty"`
+	RequestConcurrency int               `yaml:"request_concurrency,omitempty"`
+	OutputLimit        int               `yaml:"output_limit,omitempty"`
+	PreCloneScript     string            `yaml:"pre_clone_script,omitempty"`
+	PreBuildScript     string            `yaml:"pre_build_script,omitempty"`
+	PostBuildScript    string            `yaml:"post_build_script,omitempty"`
+	CloneURL           string            `yaml:"clone_url,omitempty"`
+	DebugTraceDisabled bool              `yaml:"debug_trace_disabled,omitempty"`
+	TagList            []string          `yaml:"tag_list,omitempty"`
+	RunUntagged        bool              `yaml:"run_untagged,omitempty"`
+	Locked             bool              `yaml:"locked,omitempty"`
+	Limit              int               `yaml:"limit,omitempty"`
+	MaxBuilds          int               `yaml:"max_builds,omitempty"`
+	Docker             *DockerConfig     `yaml:"docker,omitempty"`
+	Machine            *MachineConfig    `yaml:"machine,omitempty"`
+	Kubernetes         *KubernetesConfig `yaml:"kubernetes,omitempty"`
 }
 
 type DockerConfig struct {
@@ -85,14 +85,14 @@ type DockerConfig struct {
 	MemoryReservation          string            `yaml:"memory_reservation,omitempty"`
 	CpusetCpus                 string            `yaml:"cpuset_cpus,omitempty"`
 	Cpus                       string            `yaml:"cpus,omitempty"`
-	DnsSearch                  []string          `yaml:"dns_search,omitempty"`
-	Dns                        []string          `yaml:"dns,omitempty"`
+	DNSSearch                  []string          `yaml:"dns_search,omitempty"`
+	DNS                        []string          `yaml:"dns,omitempty"`
 	Privileged                 bool              `yaml:"privileged,omitempty"`
 	DisableEntrypointOverwrite bool              `yaml:"disable_entrypoint_overwrite,omitempty"`
 	Userns                     string            `yaml:"userns_mode,omitempty"`
 	CapAdd                     []string          `yaml:"cap_add,omitempty"`
 	CapDrop                    []string          `yaml:"cap_drop,omitempty"`
-	Oom_kill_disable           bool              `yaml:"oom_kill_disable,omitempty"`
+	OomKillDisable             bool              `yaml:"oom_kill_disable,omitempty"`
 	OomScoreAdjust             int               `yaml:"oom_score_adjust,omitempty"`
 	SecurityOpt                []string          `yaml:"security_opt,omitempty"`
 	Devices                    []string          `yaml:"devices,omitempty"`

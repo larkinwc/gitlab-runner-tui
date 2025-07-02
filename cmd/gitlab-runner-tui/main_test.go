@@ -191,15 +191,15 @@ func (m *mockRunnerService) ListRunners() ([]runner.Runner, error) {
 	return []runner.Runner{}, nil
 }
 
-func (m *mockRunnerService) GetRunnerStatus(name string) (*runner.Runner, error) {
+func (m *mockRunnerService) GetRunnerStatus(_ string) (*runner.Runner, error) {
 	return nil, nil
 }
 
-func (m *mockRunnerService) GetRunnerLogs(name string, lines int) ([]string, error) {
+func (m *mockRunnerService) GetRunnerLogs(_ string, _ int) ([]string, error) {
 	return []string{}, nil
 }
 
-func (m *mockRunnerService) StreamRunnerLogs(name string) (io.ReadCloser, error) {
+func (m *mockRunnerService) StreamRunnerLogs(_ string) (io.ReadCloser, error) {
 	return nil, nil
 }
 
@@ -211,8 +211,8 @@ func (m *mockRunnerService) GetSystemStatus() (*runner.SystemStatus, error) {
 	return &runner.SystemStatus{}, nil
 }
 
-func (m *mockRunnerService) GetJobHistory(limit int) ([]runner.Job, error) {
+func (m *mockRunnerService) GetJobHistory(_ int) ([]runner.Job, error) {
 	return []runner.Job{}, nil
 }
 
-func (m *mockRunnerService) SetDebugMode(enabled bool) {}
+func (m *mockRunnerService) SetDebugMode(_ bool) {}

@@ -125,13 +125,13 @@ func (cm *TOMLConfigManager) UpdateLogLevel(level string) error {
 	return nil
 }
 
-func (cm *TOMLConfigManager) GetRunner(name string) (*runner.RunnerConfig, int) {
+func (cm *TOMLConfigManager) GetRunner(name string) (runner *runner.RunnerConfig, index int) {
 	if cm.config == nil {
 		return nil, -1
 	}
 
-	for i, r := range cm.config.Runners {
-		if r.Name == name {
+	for i := range cm.config.Runners {
+		if cm.config.Runners[i].Name == name {
 			return &cm.config.Runners[i], i
 		}
 	}
@@ -207,7 +207,7 @@ func (cm *TOMLConfigManager) UpdateRunnerRequestConcurrency(name string, concurr
 		return fmt.Errorf("request_concurrency must be non-negative")
 	}
 
-	cm.config.Runners[idx].Request_concurrency = concurrency
+	cm.config.Runners[idx].RequestConcurrency = concurrency
 	return nil
 }
 
@@ -221,7 +221,7 @@ func (cm *TOMLConfigManager) UpdateRunnerOutputLimit(name string, limit int) err
 		return fmt.Errorf("output_limit must be non-negative")
 	}
 
-	cm.config.Runners[idx].Output_limit = limit
+	cm.config.Runners[idx].OutputLimit = limit
 	return nil
 }
 
@@ -234,7 +234,8 @@ func (cm *TOMLConfigManager) Validate() error {
 		return fmt.Errorf("concurrent must be at least 1")
 	}
 
-	for i, runner := range cm.config.Runners {
+	for i := range cm.config.Runners {
+		runner := &cm.config.Runners[i]
 		if runner.Name == "" {
 			return fmt.Errorf("runner %d has no name", i)
 		}

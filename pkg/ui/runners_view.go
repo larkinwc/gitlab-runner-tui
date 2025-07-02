@@ -143,7 +143,8 @@ func (v *RunnersView) View() string {
 
 func (v *RunnersView) updateTable() {
 	rows := []table.Row{}
-	for _, r := range v.runners {
+	for i := range v.runners {
+		r := &v.runners[i]
 		tags := strings.Join(r.TagList, ", ")
 		if tags == "" {
 			tags = "-"

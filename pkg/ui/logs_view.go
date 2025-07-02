@@ -22,7 +22,6 @@ type LogsView struct {
 	width      int
 	height     int
 	autoScroll bool
-	filterText string
 }
 
 func NewLogsView(service runner.Service) *LogsView {

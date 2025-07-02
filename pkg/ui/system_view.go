@@ -125,24 +125,25 @@ func (v *SystemView) View() string {
 			fmt.Sprintf("Uptime: %s", formatDuration(status.Uptime)),
 		}
 
-		content = append(content, InfoBoxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, infoItems...)))
-		content = append(content, "")
+		content = append(content, InfoBoxStyle.Render(lipgloss.JoinVertical(lipgloss.Left, infoItems...)), "")
 
 		cpuPercent := status.CPUUsage / 100.0
 		if cpuPercent > 1.0 {
 			cpuPercent = 1.0
 		}
-		content = append(content, fmt.Sprintf("CPU Usage: %.1f%%", status.CPUUsage))
-		content = append(content, v.cpuProgress.ViewAs(cpuPercent))
-		content = append(content, "")
+		content = append(content,
+			fmt.Sprintf("CPU Usage: %.1f%%", status.CPUUsage),
+			v.cpuProgress.ViewAs(cpuPercent),
+			"")
 
 		memoryMB := float64(status.MemoryUsage) / 1024 / 1024
 		memPercent := float64(status.MemoryUsage) / (8 * 1024 * 1024 * 1024)
 		if memPercent > 1.0 {
 			memPercent = 1.0
 		}
-		content = append(content, fmt.Sprintf("Memory Usage: %.1f MB", memoryMB))
-		content = append(content, v.memProgress.ViewAs(memPercent))
+		content = append(content,
+			fmt.Sprintf("Memory Usage: %.1f MB", memoryMB),
+			v.memProgress.ViewAs(memPercent))
 	}
 
 	// Help is now shown in the status bar

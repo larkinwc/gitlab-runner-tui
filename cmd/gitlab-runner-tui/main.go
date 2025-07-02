@@ -54,81 +54,95 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		return m.handleWindowSize(msg)
+	case tea.KeyMsg:
+		return m.handleKeyPress(msg)
+	}
 
-		m.runnersView.Update(msg)
-		m.logsView.Update(msg)
-		m.configView.Update(msg)
-		m.systemView.Update(msg)
-		m.historyView.Update(msg)
+	return m.updateActiveView(msg)
+}
 
+func (m model) handleWindowSize(msg tea.WindowSizeMsg) (tea.Model, tea.Cmd) {
+	m.width = msg.Width
+	m.height = msg.Height
+
+	m.runnersView.Update(msg)
+	m.logsView.Update(msg)
+	m.configView.Update(msg)
+	m.systemView.Update(msg)
+	m.historyView.Update(msg)
+
+	return m, nil
+}
+
+func (m model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c", "q":
+		if m.activeTab == 1 {
+			m.activeTab = 0
+			return m, nil
+		}
+		m.quitting = true
+		return m, tea.Quit
+
+	case "tab":
+		m.activeTab = (m.activeTab + 1) % len(m.tabs)
+		return m.switchTab()
+
+	case "shift+tab":
+		m.activeTab = (m.activeTab - 1 + len(m.tabs)) % len(m.tabs)
+		return m.switchTab()
+
+	case "1", "2", "3", "4", "5":
+		if idx := int(msg.String()[0] - '1'); idx < len(m.tabs) {
+			m.activeTab = idx
+			return m.switchTab()
+		}
 		return m, nil
 
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			if m.activeTab == 1 {
-				m.activeTab = 0
-				return m, nil
-			}
-			m.quitting = true
-			return m, tea.Quit
-
-		case "tab":
-			m.activeTab = (m.activeTab + 1) % len(m.tabs)
-			return m.switchTab()
-
-		case "shift+tab":
-			m.activeTab = (m.activeTab - 1 + len(m.tabs)) % len(m.tabs)
-			return m.switchTab()
-
-		case "1", "2", "3", "4", "5":
-			if idx := int(msg.String()[0] - '1'); idx < len(m.tabs) {
-				m.activeTab = idx
+	case "enter":
+		if m.activeTab == 0 {
+			if runner := m.runnersView.GetSelectedRunner(); runner != nil {
+				m.logsView.SetRunner(runner.Name)
+				m.activeTab = 1
 				return m.switchTab()
-			}
-			return m, nil
-
-		case "enter":
-			if m.activeTab == 0 {
-				if runner := m.runnersView.GetSelectedRunner(); runner != nil {
-					m.logsView.SetRunner(runner.Name)
-					m.activeTab = 1
-					return m.switchTab()
-				}
 			}
 		}
 	}
 
+	// If key wasn't handled, pass it to the active view
+	return m.updateActiveView(msg)
+}
+
+func (m model) updateActiveView(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
 	switch m.activeTab {
 	case 0:
-		updatedView, cmd := m.runnersView.Update(msg)
+		var updatedView tea.Model
+		updatedView, cmd = m.runnersView.Update(msg)
 		m.runnersView = updatedView.(*ui.RunnersView)
-		cmds = append(cmds, cmd)
 	case 1:
-		updatedView, cmd := m.logsView.Update(msg)
+		var updatedView tea.Model
+		updatedView, cmd = m.logsView.Update(msg)
 		m.logsView = updatedView.(*ui.LogsView)
-		cmds = append(cmds, cmd)
 	case 2:
-		updatedView, cmd := m.configView.Update(msg)
+		var updatedView tea.Model
+		updatedView, cmd = m.configView.Update(msg)
 		m.configView = updatedView.(*ui.ConfigView)
-		cmds = append(cmds, cmd)
 	case 3:
-		updatedView, cmd := m.systemView.Update(msg)
+		var updatedView tea.Model
+		updatedView, cmd = m.systemView.Update(msg)
 		m.systemView = updatedView.(*ui.SystemView)
-		cmds = append(cmds, cmd)
 	case 4:
-		updatedView, cmd := m.historyView.Update(msg)
+		var updatedView tea.Model
+		updatedView, cmd = m.historyView.Update(msg)
 		m.historyView = updatedView.(*ui.HistoryView)
-		cmds = append(cmds, cmd)
 	}
 
-	return m, tea.Batch(cmds...)
+	return m, cmd
 }
 
 func (m model) switchTab() (model, tea.Cmd) {
@@ -214,7 +228,7 @@ func (m model) View() string {
 }
 
 func (m model) renderTabBar() string {
-	var tabs []string
+	tabs := make([]string, 0, len(m.tabs))
 
 	for i, tab := range m.tabs {
 		style := ui.TabStyle

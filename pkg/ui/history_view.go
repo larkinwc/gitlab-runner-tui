@@ -141,8 +141,7 @@ func (v *HistoryView) View() string {
 	if len(v.jobs) == 0 {
 		content = append(content, InfoBoxStyle.Render("No job history available"))
 	} else {
-		content = append(content, v.table.View())
-		content = append(content, "",
+		content = append(content, v.table.View(), "",
 			lipgloss.NewStyle().Foreground(ColorMuted).Render(
 				fmt.Sprintf("Showing %d recent jobs", len(v.jobs)),
 			),
@@ -156,7 +155,8 @@ func (v *HistoryView) View() string {
 
 func (v *HistoryView) updateTable() {
 	rows := []table.Row{}
-	for _, job := range v.jobs {
+	for i := range v.jobs {
+		job := &v.jobs[i]
 		status := job.Status
 		statusStyle := StatusUnknownStyle
 		switch strings.ToLower(status) {

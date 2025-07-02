@@ -29,7 +29,7 @@ log_level = "info"
 	}
 	defer os.Remove(tmpFile.Name())
 
-	if _, err := tmpFile.Write([]byte(testConfig)); err != nil {
+	if _, err := tmpFile.WriteString(testConfig); err != nil {
 		t.Fatal(err)
 	}
 	tmpFile.Close()
@@ -194,7 +194,7 @@ func TestTOMLConfigManager_Updates(t *testing.T) {
 				return cm.UpdateRunnerRequestConcurrency("test-runner", 5)
 			},
 			validate: func() bool {
-				return cm.config.Runners[0].Request_concurrency == 5
+				return cm.config.Runners[0].RequestConcurrency == 5
 			},
 		},
 		{
@@ -203,7 +203,7 @@ func TestTOMLConfigManager_Updates(t *testing.T) {
 				return cm.UpdateRunnerOutputLimit("test-runner", 4096)
 			},
 			validate: func() bool {
-				return cm.config.Runners[0].Output_limit == 4096
+				return cm.config.Runners[0].OutputLimit == 4096
 			},
 		},
 	}
